@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 /**
  * Пользователь Orkestrum/platform-management, на которого нацеливаются флаги — и он же кэш
@@ -59,23 +59,23 @@ public class AppUserEntity {
     private String fingerprint;
 
     @Column(name = "last_synced_at")
-    private OffsetDateTime lastSyncedAt;
+    private Instant lastSyncedAt;
 
     @Column(name = "created_at", updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     void onCreate() {
-        OffsetDateTime now = OffsetDateTime.now();
+        Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
     }
 
     @PreUpdate
     void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+        updatedAt = Instant.now();
     }
 }

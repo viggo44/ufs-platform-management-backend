@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 /**
  * Строка связи {@code ValuedFlag<Group>}. Простой скалярный id (без {@code @ManyToOne}).
@@ -29,7 +29,7 @@ public class FlagGroupValueEntity {
     private boolean value;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 
     public FlagGroupValueEntity(Long flagId, Long groupId, boolean value) {
         this.id = new FlagGroupValueId(flagId, groupId);
@@ -39,6 +39,6 @@ public class FlagGroupValueEntity {
     @PrePersist
     @PreUpdate
     void touch() {
-        updatedAt = OffsetDateTime.now();
+        updatedAt = Instant.now();
     }
 }

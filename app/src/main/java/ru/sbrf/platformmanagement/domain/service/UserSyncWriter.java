@@ -15,7 +15,7 @@ import ru.sbrf.platformmanagement.domain.repository.AppUserRoleRepository;
 import ru.sbrf.platformmanagement.domain.repository.PermissionDictRepository;
 import ru.sbrf.platformmanagement.domain.repository.RoleDictRepository;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,7 +67,7 @@ public class UserSyncWriter {
         entity.setDepartmentNumber(s.departmentNumber());
         entity.setIssuer(s.issuer());
         entity.setFingerprint(s.fingerprint());
-        entity.setLastSyncedAt(OffsetDateTime.now());
+        entity.setLastSyncedAt(Instant.now());
         appUserRepository.save(entity);
     }
 
