@@ -1,0 +1,233 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    id 'com.github.johnrengelman.processes' version '0.5.0'
+    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
+    id 'jacoco'
+}
+
+ext {
+    UFS_PLATFORM_VERSION = "4.8.0.5"
+    UFS_PLATFORM_THRIDPARTY_VERSION = "4.8.0.5"
+
+    mapstructVersion = '1.6.3'
+
+    ufsPreventionCommonsVersion = '0.3.0-4.8.0.5'
+    preventionCommonsVersion = '0.5.0'
+    preventionCommonsVersionapi='0.3.0'
+}
+
+evaluationDependsOn(':db')
+
+configurations {
+    implementation {
+    }
+    all {
+        resolutionStrategy {
+        }
+    }
+
+    testRuntimeClasspath {
+        extendsFrom developmentOnly
+    }
+}
+
+dependencies {
+    compileOnly libs.lombok
+
+    implementation platform("ru.sbt.platformv.synthetic.sdk:platform-owned-bom:$UFS_PLATFORM_VERSION")
+    implementation platform("ru.sbt.platformv.synthetic.sdk:platform-thirdparty-bom:$UFS_PLATFORM_THRIDPARTY_VERSION")
+    implementation platform(libs.spring.boot.dependencies)
+    implementation platform(libs.spring.cloud.openfeign.dependencies)
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework:spring-aspects'
+
+    implementation "org.postgresql:postgresql"
+    implementation "com.h2database:h2"
+
+    implementation libs.spring.cloud.starter.openfeign
+    implementation 'io.github.openfeign:feign-okhttp'
+
+    implementation project(":api")
+
+    // SUSC (Технологическое ядро)
+    implementation 'ru.sbrf.ufs.platform:environment-spring-boot-starter'
+    implementation 'ru.sbrf.ufs.platform:ufs-platform-cache-impl'
+
+    // HTCL (HTTPClient)
+    implementation 'ru.sbrf.ufs.platform:httpclient-spring-boot-starter'
+    implementation 'ru.sbrf.ufs.platform:httpclient-bundle-fs'
+    implementation 'ru.sbrf.ufs.platform:httpclient-cfgm'
+    implementation 'ru.sbrf.ufs.platform:httpclient-monm'
+
+    // RSAP (RestApp)
+    implementation 'ru.sbrf.ufs.platform:rest-app-jersey-spring-boot-starter'
+    implementation 'ru.sbrf.ufs.platform:rest-app-platformv-adapter' // непонятно нужен ли ?
+
+    // KMAH/AUTH (Аутентификация)
+    implementation 'ru.sbrf.ufs.platform:authentication-spring-boot-starter'
+
+    // KMAZ/AUTZ (Авторизация)
+    implementation 'ru.sbrf.ufs.security.spring-boot:ufs-security-spring-boot-starter'
+
+    // CFGM (СУП/Pacman)
+    implementation 'ru.sbt.cfg.property.source:cfg-property-source-starter'
+    implementation 'ru.sbt.cfg.property.source:cfg-property-source-ufs-starter'
+    implementation 'ru.sbt.cfg.property.source:cfg-property-source-ufs-json-processor'
+    implementation 'ru.sbt.pacman:cfg-ext-header-ufs'
+    implementation 'ru.sbt.pacman:cfg-ext-property-source-ufs'
+    implementation 'ru.sbrf.ufs.platform:ufs-platform-config-data'
+
+    // LOGM (Журналирование)
+    implementation 'ru.sbrf.ufs.platform:logger-springboot-starter'
+    implementation 'ru.sbrf.ufs.platform:logm-feature-toggle'
+
+    // MONM (Прикладной мониторинг) // пока не подключаем. Только api для других КМ
+//    implementation 'ru.sbrf.ufs.monitoring.spring-boot-monm:monm-spring-boot-starter'
+    implementation 'ru.sbrf.ufs.platform:ufs-platform-monitoring-api'
+    implementation 'ru.sbrf.ufs.platform:ufs-platform-monitoring-monm-api'
+
+    // SUSL (Сервис сессионных данных)
+    implementation 'ru.sbrf.ufs.sds:sds-spring-boot-starter'
+    implementation 'sber.platform.sus:sds-platformv-adapter'
+    implementation 'sber.platform.sus:sds-near-cache'
+
+
+    // Внутренние библиотеки
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-spring-authentication:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-common:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-spring-openapi:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-spring-security:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-spring-web:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention.ufs:prevention-ufs-spring-logger:$ufsPreventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention:prevention-commons-commons:$preventionCommonsVersion"
+    implementation "ru.sbrf.phoenix.prevention:prevention-commons-api:$preventionCommonsVersionapi"
+
+    // Добавлено под перенесённое решение: fingerprint-кэш login-sync (не было в исходном
+    // build.gradle — предположение, что ufs-platform-cache-impl его транзитивно не тянет).
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    // Все остальное
+    implementation 'org.glassfish.jersey.ext:jersey-bean-validation'
+    implementation 'org.glassfish.jersey.ext:jersey-micrometer'
+    implementation 'org.glassfish.jersey.media:jersey-media-multipart'
+
+    implementation 'io.micrometer:micrometer-tracing'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    implementation libs.springdoc.openapi.ui
+    implementation libs.swagger.jaxrs2
+
+    implementation "org.mapstruct:mapstruct:$mapstructVersion"
+    implementation "org.apache.commons:commons-lang3"
+    implementation "org.apache.commons:commons-text"
+    implementation 'org.apache.commons:commons-collections4'
+    implementation "commons-beanutils:commons-beanutils"
+    implementation "io.vavr:vavr"
+    implementation 'io.github.resilience4j:resilience4j-spring-boot2' // почему-то в platform-thirdparty-bom-4.8.0.5.pom SB2, а не SB3!
+    implementation 'io.github.resilience4j:resilience4j-all'
+    implementation "com.google.guava:guava"
+    implementation "net.logstash.logback:logstash-logback-encoder"
+
+    developmentOnly platform(libs.spring.boot.dependencies)
+    developmentOnly files(project(":db").sourceSets.main.output.resourcesDir)
+    developmentOnly files(project(":db").sourceSets.test.output.resourcesDir)
+    developmentOnly "org.liquibase:liquibase-core"
+
+    annotationProcessor platform(libs.spring.boot.dependencies)
+    annotationProcessor libs.lombok
+    annotationProcessor "org.mapstruct:mapstruct-processor:$mapstructVersion"
+
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
+    testImplementation libs.spring.boot.starter.test
+    testImplementation "commons-io:commons-io"
+    testImplementation 'org.apache.commons:commons-collections4'
+    testImplementation 'org.unitils:unitils-core:3.4.6'
+    testImplementation 'org.awaitility:awaitility'
+    testImplementation 'org.jeasy:easy-random-core:5.0.0'
+    testImplementation 'io.github.glytching:junit-extensions:2.6.0'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'net.javacrumbs.json-unit:json-unit-assertj:2.37.0'
+    testImplementation 'org.wiremock:wiremock-jetty12:3.13.2'
+}
+
+jar {
+    enabled true
+    archiveFileName = "meta_" + archiveFileName.get()
+}
+
+bootJar {
+    archiveFileName = rootProject.name + "_" + archiveFileName.get()
+    manifest {
+        attributes 'Implementation-Version': project.version
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+test {
+    maxHeapSize = "1g"
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+}
+
+// плагин SUP не работает. собирать руками из:
+// KMAH:
+//  ru.sbrf.ufs.platform/ufs-platform-auth-impl/8.0.2.1/?/ufs-platform-auth-impl-8.0.2.1-config.json
+// SUSD:
+//   ru.sbrf.ufs.sds/sds-impl/8.0.3/?/sds-impl-8.0.3-config.json
+//   ru.sbrf.ufs.sds/sds-impl/8.0.3/?/sds-impl-8.0.3-config.conf
+// KMAZ:
+//   ru.sbrf.ufs.platform/ufs-platform-security/12.0.2.1/?/ufs-platform-security-12.0.2.1-config.json
+// SUSC:
+//   ru.sbrf.ufs.platform/ufs-platform-core/8.0.2.0/?/ufs-platform-core-8.0.2.0-config.json
+
+def props = new Properties()
+file("expand.properties").withInputStream { props.load(it) }
+props.put("projectDir", projectDir.toString())
+props.put("version", project.version.toString())
+props.put("ufsPlatformVersion", project.ext.UFS_PLATFORM_VERSION)
+println "expand.properties: " + props
+
+processResources {
+    dependsOn tasks.getByPath(':db:processResources')
+
+    filesMatching(['**/*.yml', '**/*.properties', '**/*.xml', '**/cfgm/mock-files/*.json']) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: props)
+    }
+
+    filesMatching(['**/openapi-configuration.yaml']) {
+        expand project(":api").properties
+    }
+}
+
+processTestResources {
+    dependsOn tasks.getByPath(':db:processTestResources')
+
+    filesMatching(['**/*.yml', '**/*.properties', '**/*.xml', '**/cfgm/mock-files/*.json']) {
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: props)
+    }
+}
+
+def profiles = 'stubMode,STUB,SWAGGER'
+
+bootRun {
+    systemProperty('file.encoding', "UTF-8")
+    args = ["--spring.profiles.active=" + profiles]
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+}
+
+openApi {
+    apiDocsUrl.set("http://localhost:8081/platform-management/openapi/openapi.yaml")
+    outputDir.set(file("${project(":api").projectDir}/docs"))
+    outputFileName.set("openapi.yaml")
+    customBootRun {
+        args.set(["--spring.profiles.active=$profiles"])
+    }
+}

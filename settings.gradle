@@ -1,0 +1,91 @@
+pluginManagement {
+    repositories {
+        def protectedRepo = { repoUrl ->
+            maven {
+                url repoUrl
+                credentials {
+                    username System.getProperty("gradle.wrapperUser")
+                    password System.getProperty("gradle.wrapperPassword")
+                }
+            }
+        }
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/maven-lib-int/")
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/maven-proxy-lib-internal/")
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/public/")
+    }
+    plugins {
+        id('org.ajoberstar.reckon.settings') version '0.18.0'
+    }
+}
+
+plugins {
+    id('org.ajoberstar.reckon.settings')
+}
+
+reckon {
+    defaultInferredScope = 'minor'
+    stages 'dev', 'rc', 'final'
+    scopeCalc = calcScopeFromProp().or(calcScopeFromCommitMessages())
+    stageCalc = calcStageFromProp()
+}
+
+dependencyResolutionManagement {
+    repositories {
+        def protectedRepo = { repoUrl ->
+            maven {
+                url repoUrl
+                credentials {
+                    username System.getProperty("gradle.wrapperUser")
+                    password System.getProperty("gradle.wrapperPassword")
+                }
+            }
+        }
+
+        if (enableMavenLocalRepository.toBoolean()) {
+            mavenLocal {
+                content {
+                    includeGroup("ru.sbrf.ssv.backend")
+                }
+            }
+        }
+
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/public/")
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/maven-lib-int/")
+        protectedRepo("https://nexus-ci.delta.sbrf.ru/repository/maven-proxy-lib-internal/")
+    }
+
+    versionCatalogs {
+        libs {
+            version('springboot', '3.5.12')
+            version('springcloud-openfeign', '4.3.1')
+            version('springdocUi', '2.8.16')
+            version('swagger', '2.2.43')
+
+            plugin('spring-boot', 'org.springframework.boot').versionRef('springboot')
+
+            library('springdoc-openapi-ui', 'org.springdoc', 'springdoc-openapi-starter-webmvc-ui').versionRef('springdocUi')
+            library('swagger-jaxrs2', 'io.swagger.core.v3', 'swagger-jaxrs2-jakarta').versionRef('swagger')
+            library('swagger-annotations', 'io.swagger.core.v3', 'swagger-annotations-jakarta').versionRef('swagger')
+
+            library('lombok', 'org.projectlombok:lombok:1.18.44')
+
+            library('spring-boot-starter-web', 'org.springframework.boot', 'spring-boot-starter-web').versionRef('springboot')
+            library('spring-boot-starter-undertow', 'org.springframework.boot', 'spring-boot-starter-undertow').versionRef('springboot')
+            library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('springboot')
+            library('spring-boot-starter-actuator', 'org.springframework.boot', 'spring-boot-starter-actuator').versionRef('springboot')
+            library('spring-boot-starter-test', 'org.springframework.boot', 'spring-boot-starter-test').versionRef('springboot')
+            library('spring-boot-dependencies', 'org.springframework.boot', 'spring-boot-dependencies').versionRef('springboot')
+            library('spring-cloud-starter-openfeign', 'org.springframework.cloud', 'spring-cloud-starter-openfeign').versionRef('springcloud-openfeign')
+            library('spring-cloud-openfeign-dependencies', 'org.springframework.cloud', 'spring-cloud-openfeign-dependencies').versionRef('springcloud-openfeign')
+
+
+        }
+    }
+}
+
+System.setProperty("sonar.gradle.skipCompile", "true")
+
+rootProject.name = 'ufs-platform-management-backend'
+include 'app'
+include 'api'
+include 'db'

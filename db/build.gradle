@@ -1,0 +1,76 @@
+plugins {
+    id 'org.liquibase.gradle' version '2.2.1'
+}
+
+ext {
+    publishModuleName = 'ufs-platform-management-data-db'
+
+    postgresVersion = '42.7.10'
+    liquibaseVersion = '4.5.0'
+    snakeyamlVersion = '2.0'
+}
+
+version = '1.0.0'
+
+logger.lifecycle("db version: ${version}")
+
+configurations {
+    publishModule.transitive false
+}
+
+dependencies {
+    // 27.10.2022 Обязательно использовать версию 4.5.0 для совместимости с DeployTools (D-01.040.189-633). На версии 4.6.1 скрипты не проливаются, при этом ошибок нет
+    compileOnly "org.liquibase:liquibase-core:$liquibaseVersion"
+    compileOnly "org.yaml:snakeyaml:$snakeyamlVersion"
+    compileOnly "org.postgresql:postgresql:$postgresVersion"
+
+    liquibaseRuntime "org.postgresql:postgresql:$postgresVersion"
+    liquibaseRuntime "org.liquibase:liquibase-core:$liquibaseVersion"
+    liquibaseRuntime "org.yaml:snakeyaml:$snakeyamlVersion"
+    liquibaseRuntime 'info.picocli:picocli:4.6.1'
+    liquibaseRuntime 'com.h2database:h2:2.2.224'
+
+    publishModule "$project.group:$publishModuleName:$project.version"
+}
+
+tasks.register("distrib", Zip) {
+    from ('./src/main/resources/liquibase') { include '**' }
+    from { configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { it } }
+    archiveFileName = 'db-platfommanagement.zip'
+}
+
+build {
+    finalizedBy distrib
+}
+
+if (!project.hasProperty("runList")) {
+    project.ext.runList = "local"
+}
+
+liquibase {
+    activities {
+        local {
+            changeLogFile 'db/src/main/resources/liquibase/0001_changelog.xml'
+            driver 'org.h2.Driver'
+            url 'jdbc:h2:../db/tmp/main;FILE_LOCK=NO'
+            username 'sa'
+            logLevel 'info'
+            includeSchema true
+        }
+        runList = project.ext.runList
+    }
+}
+
+tasks.register("currentTimeMillis") {
+    doFirst {
+        println System.currentTimeMillis()
+    }
+}
+
+tasks.register("printDbVersion") {
+    description = 'Печатает версию модуля db, вычисленную по последнему changelog-файлу'
+    group = 'verification'
+    doLast {
+        println project.version
+    }
+}

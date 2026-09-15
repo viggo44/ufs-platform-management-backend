@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd">
+
+    <changeSet id="0001-01-create-flag" author="platform-management">
+        <createTable tableName="flag">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_flag_name"/>
+            </column>
+            <column name="description" type="VARCHAR(2000)"/>
+            <column name="default_value" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="with_customization" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-02-create-app-user" author="platform-management">
+        <createTable tableName="app_user">
+            <column name="tab_num" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="middle_name" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(64)"/>
+            <column name="username" type="VARCHAR(255)"/>
+            <column name="full_name" type="VARCHAR(255)"/>
+            <column name="department_number" type="VARCHAR(64)"/>
+            <column name="issuer" type="VARCHAR(128)"/>
+            <column name="fingerprint" type="CHAR(64)"/>
+            <column name="last_synced_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_app_user_last_first_name" tableName="app_user">
+            <column name="last_name"/>
+            <column name="first_name"/>
+        </createIndex>
+        <!-- Postgres treats multiple NULLs as distinct in a unique index, so this behaves
+             like the original partial "where user_id is not null" index without needing one. -->
+        <createIndex indexName="uk_app_user_user_id" tableName="app_user" unique="true">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0001-03-create-user-group" author="platform-management">
+        <createTable tableName="user_group">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_user_group_name"/>
+            </column>
+            <column name="description" type="VARCHAR(2000)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-04-create-user-group-member" author="platform-management">
+        <createTable tableName="user_group_member">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="user_group_member" columnNames="user_id, group_id"
+                        constraintName="pk_user_group_member"/>
+        <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="user_id"
+                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  constraintName="fk_ugm_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="group_id"
+                                  referencedTableName="user_group" referencedColumnNames="id"
+                                  constraintName="fk_ugm_group" onDelete="CASCADE"/>
+        <createIndex indexName="idx_ugm_group" tableName="user_group_member">
+            <column name="group_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0001-05-create-flag-user-value" author="platform-management">
+        <createTable tableName="flag_user_value">
+            <column name="flag_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()"/>
+        </createTable>
+        <addPrimaryKey tableName="flag_user_value" columnNames="flag_id, user_id"
+                        constraintName="pk_flag_user_value"/>
+        <addForeignKeyConstraint baseTableName="flag_user_value" baseColumnNames="flag_id"
+                                  referencedTableName="flag" referencedColumnNames="id"
+                                  constraintName="fk_fuv_flag" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="flag_user_value" baseColumnNames="user_id"
+                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  constraintName="fk_fuv_user" onDelete="CASCADE"/>
+        <createIndex indexName="idx_fuv_user" tableName="flag_user_value">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0001-06-create-flag-group-value" author="platform-management">
+        <createTable tableName="flag_group_value">
+            <column name="flag_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()"/>
+        </createTable>
+        <addPrimaryKey tableName="flag_group_value" columnNames="flag_id, group_id"
+                        constraintName="pk_flag_group_value"/>
+        <addForeignKeyConstraint baseTableName="flag_group_value" baseColumnNames="flag_id"
+                                  referencedTableName="flag" referencedColumnNames="id"
+                                  constraintName="fk_fgv_flag" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="flag_group_value" baseColumnNames="group_id"
+                                  referencedTableName="user_group" referencedColumnNames="id"
+                                  constraintName="fk_fgv_group" onDelete="CASCADE"/>
+        <createIndex indexName="idx_fgv_group" tableName="flag_group_value">
+            <column name="group_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0001-07-create-usersync-dictionaries" author="platform-management">
+        <createTable tableName="role_dict">
+            <column name="code" type="VARCHAR(128)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="permission_dict">
+            <column name="code" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-08-create-usersync-links" author="platform-management">
+        <createTable tableName="app_user_role">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_code" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="app_user_role" columnNames="user_id, role_code"
+                        constraintName="pk_app_user_role"/>
+        <addForeignKeyConstraint baseTableName="app_user_role" baseColumnNames="user_id"
+                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  constraintName="fk_aur_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="app_user_role" baseColumnNames="role_code"
+                                  referencedTableName="role_dict" referencedColumnNames="code"
+                                  constraintName="fk_aur_role"/>
+
+        <createTable tableName="app_user_permission">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="permission_code" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="app_user_permission" columnNames="user_id, permission_code"
+                        constraintName="pk_app_user_permission"/>
+        <addForeignKeyConstraint baseTableName="app_user_permission" baseColumnNames="user_id"
+                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  constraintName="fk_aup_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="app_user_permission" baseColumnNames="permission_code"
+                                  referencedTableName="permission_dict" referencedColumnNames="code"
+                                  constraintName="fk_aup_permission"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,16 @@
+plugins {
+    id 'jacoco'
+}
+
+version '1.0.0'
+
+dependencies {
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    implementation platform(libs.spring.boot.dependencies)
+    implementation "com.fasterxml.jackson.core:jackson-annotations"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation "jakarta.validation:jakarta.validation-api"
+    implementation libs.swagger.annotations
+
+}

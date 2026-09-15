@@ -1,0 +1,63 @@
+server:
+  address: @serverAddress@
+  servlet:
+    context-path: /@serverServletContextPath@
+spring:
+  application:
+    name: ufs-platform-management-backend
+  liquibase:
+    enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+# UFS Configs
+ufs:
+  platform:
+    environment:
+      product:
+        subsystem: @subsystemCode@
+        channel: @ufsChannel@
+        deploymentUnit: @appDeploymentUnit@
+        distrib-version: @version@-@ufsPlatformVersion@
+        release: @ufsRelease@
+        version: @version@
+    config:
+      deploymentUnit: @appDeploymentUnit@
+
+  # Журналирование
+  logger:
+    client:
+      filter-class-name: "ru.sbrf.phoenix.signal.logger.LoggerHttpExFilter"
+
+sds:
+  platformv:
+    monitoring:
+      enabled: false
+      targets: "pvm"
+
+# --- Добавлено под перенесённое решение (не было в исходном application.yml) ---
+
+app:
+  datasource:
+    main:
+      jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/platform_management}
+      username: ${DB_USERNAME:platform_management}
+      password: ${DB_PASSWORD:platform_management}
+  usersync:
+    enabled: true
+    refresh-hours: 1
+    executor-core-pool-size: 2
+    executor-max-pool-size: 4
+    executor-queue-capacity: 500
+    cache-maximum-size: 100000
+    # Заглушка межсервисной авторизации для POST /internal/usersync — общий секрет,
+    # который должен прислать сервис логина в заголовке X-Internal-Api-Key.
+    # Пусто по умолчанию => эндпоинт отклоняет всё, пока не сконфигурирован явно.
+    # Заменить на mTLS/OAuth2 client-credentials/сетевую политику шлюза перед продом.
+    inbound-api-key: ${USERSYNC_INBOUND_API_KEY:}
+
+logging:
+  level:
+    ru.sbrf.platformmanagement: info
