@@ -6,8 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.sbrf.platformmanagement.domain.model.AppUserEntity;
 import ru.sbrf.platformmanagement.domain.model.AppUserPermissionEntity;
 import ru.sbrf.platformmanagement.domain.model.AppUserRoleEntity;
-import ru.sbrf.platformmanagement.domain.model.PermissionDictEntity;
-import ru.sbrf.platformmanagement.domain.model.RoleDictEntity;
 import ru.sbrf.platformmanagement.domain.model.UserSnapshot;
 import ru.sbrf.platformmanagement.domain.repository.AppUserPermissionRepository;
 import ru.sbrf.platformmanagement.domain.repository.AppUserRepository;
@@ -113,30 +111,17 @@ public class UserSyncWriter {
                 .toList());
     }
 
-    /** Вызывается только с кодами, новыми для этого пользователя — не со всем его списком. */
+    /**
+     * Вызывается только с кодами, новыми для этого пользователя — не со всем его списком.
+     * {@code upsertMissing} атомарен ({@code ON CONFLICT DO NOTHING}), поэтому не нужно
+     * заранее проверять, чего уже нет в справочнике — конкурентная вставка того же кода
+     * другим логином просто станет no-op, а не гонкой check-then-insert.
+     */
     private void upsertRoleDictionary(List<String> newCodes) {
-        Set<String> alreadyInDict = roleDictRepository.findAllById(newCodes).stream()
-                .map(RoleDictEntity::getCode)
-                .collect(Collectors.toSet());
-        List<RoleDictEntity> missing = newCodes.stream()
-                .filter(code -> !alreadyInDict.contains(code))
-                .map(code -> new RoleDictEntity(code, code))
-                .toList();
-        if (!missing.isEmpty()) {
-            roleDictRepository.saveAll(missing);
-        }
+        roleDictRepository.upsertMissing(newCodes.toArray(String[]::new));
     }
 
     private void upsertPermissionDictionary(List<String> newCodes) {
-        Set<String> alreadyInDict = permissionDictRepository.findAllById(newCodes).stream()
-                .map(PermissionDictEntity::getCode)
-                .collect(Collectors.toSet());
-        List<PermissionDictEntity> missing = newCodes.stream()
-                .filter(code -> !alreadyInDict.contains(code))
-                .map(code -> new PermissionDictEntity(code, code))
-                .toList();
-        if (!missing.isEmpty()) {
-            permissionDictRepository.saveAll(missing);
-        }
+        permissionDictRepository.upsertMissing(newCodes.toArray(String[]::new));
     }
 }
