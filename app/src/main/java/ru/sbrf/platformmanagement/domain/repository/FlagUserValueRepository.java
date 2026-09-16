@@ -20,9 +20,9 @@ public interface FlagUserValueRepository extends JpaRepository<FlagUserValueEnti
 
     @Modifying
     @Query("delete from FlagUserValueEntity f where f.id.flagId = :flagId and f.id.userId in :userIds")
-    void deleteByFlagIdAndUserIds(@Param("flagId") Long flagId, @Param("userIds") Collection<String> userIds);
+    void deleteByFlagIdAndUserIds(@Param("flagId") Long flagId, @Param("userIds") Collection<Long> userIds);
 
     @Modifying
     @Query("delete from FlagUserValueEntity f where f.id.userId = :userId")
-    void deleteAllByUserId(@Param("userId") String userId);
+    void deleteAllByUserId(@Param("userId") Long userId);
 }

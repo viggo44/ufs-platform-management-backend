@@ -12,7 +12,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.sbrf.platformmanagement.domain.service.AppUserService;
+import ru.sbrf.platformmanagement.domain.service.UserService;
 import ru.sbrf.platformmanagement.ufs.api.model.GroupDto;
 import ru.sbrf.platformmanagement.ufs.api.model.UfsPageListRs;
 import ru.sbrf.platformmanagement.ufs.api.model.UfsPageRequest;
@@ -30,16 +30,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final AppUserService appUserService;
+    private final UserService userService;
 
     @POST
     public UserDto createUser(@Valid UserCreateDto request) {
-        return appUserService.createUser(request);
+        return userService.createUser(request);
     }
 
     @PATCH
     public UserDto patchUser(@QueryParam("id") String id, @Valid UserPatchDto request) {
-        return appUserService.patchUser(RequireParam.notNull(id, "id"), request);
+        return userService.patchUser(RequireParam.notNull(id, "id"), request);
     }
 
     @GET
@@ -51,24 +51,24 @@ public class UserController {
                                             @QueryParam("tabNum") String tabNum) {
         UfsPageRequest pageRequest = new UfsPageRequest(
                 RequireParam.notNull(page, "page"), RequireParam.notNull(limit, "limit"));
-        return appUserService.getUsers(pageRequest, sort, lastName, firstName, tabNum);
+        return userService.getUsers(pageRequest, sort, lastName, firstName, tabNum);
     }
 
     @GET
     @Path("/groups")
     public List<GroupDto> getUserGroups(@QueryParam("id") String id) {
-        return appUserService.getUserGroups(RequireParam.notNull(id, "id"));
+        return userService.getUserGroups(RequireParam.notNull(id, "id"));
     }
 
     @GET
     @Path("/flags")
     public List<UserFlagDto> getUserFlags(@QueryParam("id") String id,
                                            @QueryParam("customOnly") @DefaultValue("false") boolean customOnly) {
-        return appUserService.getUserFlags(RequireParam.notNull(id, "id"), customOnly);
+        return userService.getUserFlags(RequireParam.notNull(id, "id"), customOnly);
     }
 
     @DELETE
     public boolean deleteUser(@QueryParam("id") String id) {
-        return appUserService.deleteUser(RequireParam.notNull(id, "id"));
+        return userService.deleteUser(RequireParam.notNull(id, "id"));
     }
 }

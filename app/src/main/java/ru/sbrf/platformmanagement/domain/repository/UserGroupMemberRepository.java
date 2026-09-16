@@ -13,7 +13,7 @@ public interface UserGroupMemberRepository extends JpaRepository<UserGroupMember
 
     @Modifying
     @Query("delete from UserGroupMemberEntity m where m.id.groupId = :groupId and m.id.userId in :userIds")
-    void deleteByGroupIdAndUserIds(@Param("groupId") Long groupId, @Param("userIds") Collection<String> userIds);
+    void deleteByGroupIdAndUserIds(@Param("groupId") Long groupId, @Param("userIds") Collection<Long> userIds);
 
     @Modifying
     @Query("delete from UserGroupMemberEntity m where m.id.groupId = :groupId")
@@ -21,5 +21,5 @@ public interface UserGroupMemberRepository extends JpaRepository<UserGroupMember
 
     @Modifying
     @Query("delete from UserGroupMemberEntity m where m.id.userId = :userId")
-    void deleteAllByUserId(@Param("userId") String userId);
+    void deleteAllByUserId(@Param("userId") Long userId);
 }

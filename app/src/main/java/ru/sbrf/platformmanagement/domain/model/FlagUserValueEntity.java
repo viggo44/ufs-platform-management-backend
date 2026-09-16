@@ -30,7 +30,7 @@ public class FlagUserValueEntity {
 
     private Instant updatedAt;
 
-    public FlagUserValueEntity(Long flagId, String userId, boolean value) {
+    public FlagUserValueEntity(Long flagId, Long userId, boolean value) {
         this.id = new FlagUserValueId(flagId, userId);
         this.value = value;
     }

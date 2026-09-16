@@ -25,7 +25,7 @@ public class UserGroupMemberEntity {
     @EmbeddedId
     private UserGroupMemberId id;
 
-    public UserGroupMemberEntity(String userId, Long groupId) {
+    public UserGroupMemberEntity(Long userId, Long groupId) {
         this.id = new UserGroupMemberId(userId, groupId);
     }
 }

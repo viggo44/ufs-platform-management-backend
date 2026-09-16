@@ -3,15 +3,15 @@ package ru.sbrf.platformmanagement.domain.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.sbrf.platformmanagement.domain.model.AppUserEntity;
-import ru.sbrf.platformmanagement.domain.model.AppUserPermissionEntity;
-import ru.sbrf.platformmanagement.domain.model.AppUserRoleEntity;
+import ru.sbrf.platformmanagement.domain.model.UserEntity;
+import ru.sbrf.platformmanagement.domain.model.UserPermissionEntity;
 import ru.sbrf.platformmanagement.domain.model.UserSnapshot;
-import ru.sbrf.platformmanagement.domain.repository.AppUserPermissionRepository;
-import ru.sbrf.platformmanagement.domain.repository.AppUserRepository;
-import ru.sbrf.platformmanagement.domain.repository.AppUserRoleRepository;
+import ru.sbrf.platformmanagement.domain.model.UserSudirRoleEntity;
 import ru.sbrf.platformmanagement.domain.repository.PermissionDictRepository;
-import ru.sbrf.platformmanagement.domain.repository.RoleDictRepository;
+import ru.sbrf.platformmanagement.domain.repository.SudirRoleDictRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserPermissionRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserSudirRoleRepository;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,70 +34,71 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserSyncWriter {
 
-    private final AppUserRepository appUserRepository;
-    private final RoleDictRepository roleDictRepository;
+    private final UserRepository userRepository;
+    private final SudirRoleDictRepository sudirRoleDictRepository;
     private final PermissionDictRepository permissionDictRepository;
-    private final AppUserRoleRepository appUserRoleRepository;
-    private final AppUserPermissionRepository appUserPermissionRepository;
+    private final UserSudirRoleRepository userSudirRoleRepository;
+    private final UserPermissionRepository userPermissionRepository;
 
     @Transactional
     public void upsert(UserSnapshot snapshot) {
-        String tabNum = snapshot.tabNum();
-        upsertAppUser(tabNum, snapshot);
-        syncRoles(tabNum, snapshot.roleCodes());
-        syncPermissions(tabNum, snapshot.permissionCodes());
+        Long userId = upsertUser(snapshot.tabNum(), snapshot);
+        syncRoles(userId, snapshot.roleCodes());
+        syncPermissions(userId, snapshot.permissionCodes());
     }
 
     /**
      * На вставку (человек ещё не заведён через {@code createUser} и логинится впервые) имя/
      * фамилия берутся из ССД. На обновление ССД считается источником истины и перезаписывает
-     * ФИО, даже если их правили вручную через {@code patchUser}.
+     * ФИО, даже если их правили вручную через {@code patchUser}. Ищем и апсертим по
+     * {@code tabNum} — {@code id} для нового пользователя ещё не существует и назначается
+     * базой только при вставке, поэтому возвращаем его отдельно для линковки ролей/пермишенов.
      */
-    private void upsertAppUser(String tabNum, UserSnapshot s) {
-        AppUserEntity entity = appUserRepository.findById(tabNum).orElseGet(AppUserEntity::new);
+    private Long upsertUser(String tabNum, UserSnapshot s) {
+        UserEntity entity = userRepository.findByTabNum(tabNum).orElseGet(UserEntity::new);
         entity.setTabNum(tabNum);
         entity.setLastName(s.lastName());
         entity.setFirstName(s.firstName());
         entity.setMiddleName(s.middleName());
-        entity.setUserId(s.userId());
+        entity.setLogin(s.login());
         entity.setUsername(s.username());
         entity.setFullName(s.fullName());
         entity.setDepartmentNumber(s.departmentNumber());
         entity.setIssuer(s.issuer());
         entity.setFingerprint(s.fingerprint());
         entity.setLastSyncedAt(Instant.now());
-        appUserRepository.save(entity);
+        return userRepository.save(entity).getId();
     }
 
-    private void syncRoles(String tabNum, List<String> codes) {
+    private void syncRoles(Long userId, List<String> codes) {
         if (codes.isEmpty()) {
-            appUserRoleRepository.deleteAllByUserId(tabNum);
+            userSudirRoleRepository.deleteAllByUserId(userId);
             return;
         }
-        appUserRoleRepository.deleteStale(tabNum, codes);
+        userSudirRoleRepository.deleteStale(userId, codes);
 
-        Set<String> existing = appUserRoleRepository.findAllById_UserId(tabNum).stream()
-                .map(r -> r.getId().getRoleCode())
+        Set<String> existing = userSudirRoleRepository.findAllById_UserId(userId).stream()
+                .map(r -> r.getId().getSudirRoleCode())
                 .collect(Collectors.toSet());
         List<String> newCodes = codes.stream().filter(code -> !existing.contains(code)).toList();
         if (newCodes.isEmpty()) {
             return;
         }
 
-        upsertRoleDictionary(newCodes);
-        appUserRoleRepository.saveAll(newCodes.stream()
-                .map(code -> new AppUserRoleEntity(tabNum, code))
+        sudirRoleDictRepository.upsertMissing(newCodes.toArray(String[]::new));
+        userSudirRoleRepository.saveAll(newCodes.stream()
+                .map(code -> new UserSudirRoleEntity(userId, code))
                 .toList());
     }
 
-    private void syncPermissions(String tabNum, List<String> codes) {
+    private void syncPermissions(Long userId, List<String> codes) {
         if (codes.isEmpty()) {
-            appUserPermissionRepository.deleteAllByUserId(tabNum);
+            userPermissionRepository.deleteAllByUserId(userId);
             return;
         }
-        appUserPermissionRepository.deleteStale(tabNum, codes);
+        userPermissionRepository.deleteStale(userId, codes);
 
-        Set<String> existing = appUserPermissionRepository.findAllById_UserId(tabNum).stream()
+        Set<String> existing = userPermissionRepository.findAllById_UserId(userId).stream()
                 .map(p -> p.getId().getPermissionCode())
                 .collect(Collectors.toSet());
         List<String> newCodes = codes.stream().filter(code -> !existing.contains(code)).toList();
@@ -105,23 +106,9 @@ public class UserSyncWriter {
             return;
         }
 
-        upsertPermissionDictionary(newCodes);
-        appUserPermissionRepository.saveAll(newCodes.stream()
-                .map(code -> new AppUserPermissionEntity(tabNum, code))
-                .toList());
-    }
-
-    /**
-     * Вызывается только с кодами, новыми для этого пользователя — не со всем его списком.
-     * {@code upsertMissing} атомарен ({@code ON CONFLICT DO NOTHING}), поэтому не нужно
-     * заранее проверять, чего уже нет в справочнике — конкурентная вставка того же кода
-     * другим логином просто станет no-op, а не гонкой check-then-insert.
-     */
-    private void upsertRoleDictionary(List<String> newCodes) {
-        roleDictRepository.upsertMissing(newCodes.toArray(String[]::new));
-    }
-
-    private void upsertPermissionDictionary(List<String> newCodes) {
         permissionDictRepository.upsertMissing(newCodes.toArray(String[]::new));
+        userPermissionRepository.saveAll(newCodes.stream()
+                .map(code -> new UserPermissionEntity(userId, code))
+                .toList());
     }
 }

@@ -10,7 +10,7 @@ public interface PermissionDictRepository extends JpaRepository<PermissionDictEn
 
     /**
      * Атомарный bulk-upsert: конфликт по PK — no-op, а не исключение. См.
-     * {@link RoleDictRepository#upsertMissing} — то же соображение для пермишенов.
+     * {@link SudirRoleDictRepository#upsertMissing} — то же соображение для пермишенов.
      */
     @Modifying
     @Query(value = "insert into permission_dict(code, name) select c, c from unnest(:codes) as c "

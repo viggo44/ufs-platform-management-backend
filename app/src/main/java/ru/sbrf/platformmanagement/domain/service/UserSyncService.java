@@ -31,9 +31,9 @@ public class UserSyncService {
         }
         String tabNum = snapshot.tabNum();
         if (tabNum == null) {
-            // app_user.tab_num — не null PK; без табельного номера писать некуда.
+            // user.tab_num — не null и unique; без табельного номера писать некуда.
             log.warn("Skipping login-sync for SUDIR user [{}]: employeeNumber [{}] is blank",
-                    snapshot.userId(), snapshot.employeeNumberRaw());
+                    snapshot.login(), snapshot.employeeNumberRaw());
             return;
         }
         if (fingerprintCache.isUpToDate(tabNum, snapshot.fingerprint())) {

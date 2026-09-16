@@ -17,5 +17,5 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class FlagUserValueId implements Serializable {
     private Long flagId;
-    private String userId;
+    private Long userId;
 }

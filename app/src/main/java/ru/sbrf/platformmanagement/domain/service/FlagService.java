@@ -14,13 +14,13 @@ import ru.sbrf.platformmanagement.domain.model.FlagEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagGroupValueEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagUserValueEntity;
 import ru.sbrf.platformmanagement.domain.model.UserGroupEntity;
-import ru.sbrf.platformmanagement.domain.repository.AppUserRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagGroupValueRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagSpecifications;
 import ru.sbrf.platformmanagement.domain.repository.FlagUserValueRepository;
 import ru.sbrf.platformmanagement.domain.repository.Specifications;
 import ru.sbrf.platformmanagement.domain.repository.UserGroupRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserRepository;
 import ru.sbrf.platformmanagement.ufs.api.model.FlagCreateDto;
 import ru.sbrf.platformmanagement.ufs.api.model.FlagDto;
 import ru.sbrf.platformmanagement.ufs.api.model.FlagInfoDeleteDto;
@@ -37,7 +37,7 @@ import ru.sbrf.platformmanagement.web.mapper.FlagMapper;
 import ru.sbrf.platformmanagement.web.mapper.GroupMapper;
 import ru.sbrf.platformmanagement.web.mapper.SortResolver;
 import ru.sbrf.platformmanagement.web.mapper.UserMapper;
-import ru.sbrf.platformmanagement.domain.model.AppUserEntity;
+import ru.sbrf.platformmanagement.domain.model.UserEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class FlagService {
     private final FlagRepository flagRepository;
     private final FlagUserValueRepository flagUserValueRepository;
     private final FlagGroupValueRepository flagGroupValueRepository;
-    private final AppUserRepository appUserRepository;
+    private final UserRepository userRepository;
     private final UserGroupRepository userGroupRepository;
 
     @Transactional
@@ -90,8 +90,10 @@ public class FlagService {
         requireExists(id);
         try {
             if (request.getUserIds() != null && !request.getUserIds().isEmpty()) {
+                Map<String, Long> idsByTabNum = resolveTabNums(
+                        request.getUserIds().stream().map(ValuedFlagDto::getData).toList());
                 List<FlagUserValueEntity> rows = request.getUserIds().stream()
-                        .map(v -> new FlagUserValueEntity(id, v.getData(), v.getValue()))
+                        .map(v -> new FlagUserValueEntity(id, requireResolved(idsByTabNum, v.getData()), v.getValue()))
                         .toList();
                 flagUserValueRepository.saveAll(rows);
             }
@@ -113,7 +115,11 @@ public class FlagService {
             return false;
         }
         if (request.getUserIds() != null && !request.getUserIds().isEmpty()) {
-            flagUserValueRepository.deleteByFlagIdAndUserIds(id, request.getUserIds());
+            Map<String, Long> idsByTabNum = resolveTabNums(request.getUserIds());
+            List<Long> userIds = request.getUserIds().stream()
+                    .map(tabNum -> requireResolved(idsByTabNum, tabNum))
+                    .toList();
+            flagUserValueRepository.deleteByFlagIdAndUserIds(id, userIds);
         }
         if (request.getGroupIds() != null && !request.getGroupIds().isEmpty()) {
             flagGroupValueRepository.deleteByFlagIdAndGroupIds(id, request.getGroupIds());
@@ -134,9 +140,9 @@ public class FlagService {
 
     private FlagInfoDto buildFlagInfo(Long flagId) {
         List<FlagUserValueEntity> userValues = flagUserValueRepository.findAllById_FlagId(flagId);
-        Map<String, AppUserEntity> usersById = index(
-                appUserRepository.findAllById(userValues.stream().map(v -> v.getId().getUserId()).toList()),
-                AppUserEntity::getTabNum);
+        Map<Long, UserEntity> usersById = index(
+                userRepository.findAllById(userValues.stream().map(v -> v.getId().getUserId()).toList()),
+                UserEntity::getId);
         List<ValuedFlagDto<UserDto>> users = userValues.stream()
                 .map(v -> new ValuedFlagDto<>(UserMapper.toDto(usersById.get(v.getId().getUserId())), v.isValue()))
                 .toList();
@@ -154,6 +160,20 @@ public class FlagService {
 
     private <T, K> Map<K, T> index(List<T> items, Function<T, K> keyFn) {
         return items.stream().collect(Collectors.toMap(keyFn, Function.identity()));
+    }
+
+    /** Публичный контракт передаёт tab_num — резолвим пачкой во внутренний id одним запросом. */
+    private Map<String, Long> resolveTabNums(List<String> tabNums) {
+        return userRepository.findAllByTabNumIn(tabNums).stream()
+                .collect(Collectors.toMap(UserEntity::getTabNum, UserEntity::getId));
+    }
+
+    private Long requireResolved(Map<String, Long> idsByTabNum, String tabNum) {
+        Long id = idsByTabNum.get(tabNum);
+        if (id == null) {
+            throw new BadRequestException("User with tabNum does not exist: " + tabNum);
+        }
+        return id;
     }
 
     private FlagEntity getOrThrow(Long id) {

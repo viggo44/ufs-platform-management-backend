@@ -14,9 +14,12 @@ import java.util.List;
  * @param tabNum          {@code employeeNumberRaw}, обрезанный по краям, или {@code null},
  *                        если пусто — табельный номер может быть не чисто числовым, поэтому
  *                        это строка, а не распарсенное число
+ * @param login           реальный SUDIR-логин ССД (в запросе от сервиса логина называется
+ *                        {@code userId} — внешний контракт, здесь переименован в {@code login}
+ *                        под нашу терминологию)
  */
 public record UserSnapshot(
-        String userId,
+        String login,
         String username,
         String fullName,
         String lastName,

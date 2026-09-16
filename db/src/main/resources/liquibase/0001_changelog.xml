@@ -29,10 +29,19 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="0001-02-create-app-user" author="platform-management">
-        <createTable tableName="app_user">
-            <column name="tab_num" type="VARCHAR(32)">
+    <!--
+        id — суррогатный PK, единственная роль которого — быть якорем для FK из других таблиц
+        (user_group_member/flag_user_value/user_sudir_role/user_permission). Публичный API
+        по-прежнему адресует пользователя по tab_num (согласовано) — id наружу не отдаётся,
+        сервисный слой транслирует tab_num -> id перед тем, как идти в связанные таблицы.
+    -->
+    <changeSet id="0001-02-create-user" author="platform-management">
+        <createTable tableName="user">
+            <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tab_num" type="VARCHAR(32)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_user_tab_num"/>
             </column>
             <column name="last_name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
@@ -41,7 +50,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="middle_name" type="VARCHAR(255)"/>
-            <column name="user_id" type="VARCHAR(64)"/>
+            <column name="login" type="VARCHAR(64)"/>
             <column name="username" type="VARCHAR(255)"/>
             <column name="full_name" type="VARCHAR(255)"/>
             <column name="department_number" type="VARCHAR(64)"/>
@@ -55,14 +64,14 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <createIndex indexName="idx_app_user_last_first_name" tableName="app_user">
+        <createIndex indexName="idx_user_last_first_name" tableName="user">
             <column name="last_name"/>
             <column name="first_name"/>
         </createIndex>
         <!-- Postgres treats multiple NULLs as distinct in a unique index, so this behaves
-             like the original partial "where user_id is not null" index without needing one. -->
-        <createIndex indexName="uk_app_user_user_id" tableName="app_user" unique="true">
-            <column name="user_id"/>
+             like the original partial "where login is not null" index without needing one. -->
+        <createIndex indexName="uk_user_login" tableName="user" unique="true">
+            <column name="login"/>
         </createIndex>
     </changeSet>
 
@@ -86,7 +95,7 @@
 
     <changeSet id="0001-04-create-user-group-member" author="platform-management">
         <createTable tableName="user_group_member">
-            <column name="user_id" type="VARCHAR(32)">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="group_id" type="BIGINT">
@@ -99,7 +108,7 @@
         <addPrimaryKey tableName="user_group_member" columnNames="user_id, group_id"
                         constraintName="pk_user_group_member"/>
         <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="user_id"
-                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_ugm_user" onDelete="CASCADE"/>
         <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="group_id"
                                   referencedTableName="user_group" referencedColumnNames="id"
@@ -114,7 +123,7 @@
             <column name="flag_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="user_id" type="VARCHAR(32)">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="value" type="BOOLEAN">
@@ -128,7 +137,7 @@
                                   referencedTableName="flag" referencedColumnNames="id"
                                   constraintName="fk_fuv_flag" onDelete="CASCADE"/>
         <addForeignKeyConstraint baseTableName="flag_user_value" baseColumnNames="user_id"
-                                  referencedTableName="app_user" referencedColumnNames="tab_num"
+                                  referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_fuv_user" onDelete="CASCADE"/>
         <createIndex indexName="idx_fuv_user" tableName="flag_user_value">
             <column name="user_id"/>
@@ -162,7 +171,7 @@
     </changeSet>
 
     <changeSet id="0001-07-create-usersync-dictionaries" author="platform-management">
-        <createTable tableName="role_dict">
+        <createTable tableName="sudir_role_dict">
             <column name="code" type="VARCHAR(128)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -177,39 +186,39 @@
     </changeSet>
 
     <changeSet id="0001-08-create-usersync-links" author="platform-management">
-        <createTable tableName="app_user_role">
-            <column name="user_id" type="VARCHAR(32)">
+        <createTable tableName="user_sudir_role">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="role_code" type="VARCHAR(128)">
+            <column name="sudir_role_code" type="VARCHAR(128)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="app_user_role" columnNames="user_id, role_code"
-                        constraintName="pk_app_user_role"/>
-        <addForeignKeyConstraint baseTableName="app_user_role" baseColumnNames="user_id"
-                                  referencedTableName="app_user" referencedColumnNames="tab_num"
-                                  constraintName="fk_aur_user" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="app_user_role" baseColumnNames="role_code"
-                                  referencedTableName="role_dict" referencedColumnNames="code"
-                                  constraintName="fk_aur_role"/>
+        <addPrimaryKey tableName="user_sudir_role" columnNames="user_id, sudir_role_code"
+                        constraintName="pk_user_sudir_role"/>
+        <addForeignKeyConstraint baseTableName="user_sudir_role" baseColumnNames="user_id"
+                                  referencedTableName="user" referencedColumnNames="id"
+                                  constraintName="fk_usr_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="user_sudir_role" baseColumnNames="sudir_role_code"
+                                  referencedTableName="sudir_role_dict" referencedColumnNames="code"
+                                  constraintName="fk_usr_role"/>
 
-        <createTable tableName="app_user_permission">
-            <column name="user_id" type="VARCHAR(32)">
+        <createTable tableName="user_permission">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="permission_code" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="app_user_permission" columnNames="user_id, permission_code"
-                        constraintName="pk_app_user_permission"/>
-        <addForeignKeyConstraint baseTableName="app_user_permission" baseColumnNames="user_id"
-                                  referencedTableName="app_user" referencedColumnNames="tab_num"
-                                  constraintName="fk_aup_user" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="app_user_permission" baseColumnNames="permission_code"
+        <addPrimaryKey tableName="user_permission" columnNames="user_id, permission_code"
+                        constraintName="pk_user_permission"/>
+        <addForeignKeyConstraint baseTableName="user_permission" baseColumnNames="user_id"
+                                  referencedTableName="user" referencedColumnNames="id"
+                                  constraintName="fk_up_user" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="user_permission" baseColumnNames="permission_code"
                                   referencedTableName="permission_dict" referencedColumnNames="code"
-                                  constraintName="fk_aup_permission"/>
+                                  constraintName="fk_up_permission"/>
     </changeSet>
 
 </databaseChangeLog>

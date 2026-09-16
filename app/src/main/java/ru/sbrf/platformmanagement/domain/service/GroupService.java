@@ -10,19 +10,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.sbrf.platformmanagement.domain.model.AppUserEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagGroupValueEntity;
+import ru.sbrf.platformmanagement.domain.model.UserEntity;
 import ru.sbrf.platformmanagement.domain.model.UserGroupEntity;
 import ru.sbrf.platformmanagement.domain.model.UserGroupMemberEntity;
-import ru.sbrf.platformmanagement.domain.repository.AppUserRepository;
-import ru.sbrf.platformmanagement.domain.repository.AppUserSpecifications;
 import ru.sbrf.platformmanagement.domain.repository.FlagGroupValueRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagRepository;
 import ru.sbrf.platformmanagement.domain.repository.GroupSpecifications;
 import ru.sbrf.platformmanagement.domain.repository.Specifications;
 import ru.sbrf.platformmanagement.domain.repository.UserGroupMemberRepository;
 import ru.sbrf.platformmanagement.domain.repository.UserGroupRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserRepository;
+import ru.sbrf.platformmanagement.domain.repository.UserSpecifications;
 import ru.sbrf.platformmanagement.ufs.api.model.FlagDto;
 import ru.sbrf.platformmanagement.ufs.api.model.GroupCreateDto;
 import ru.sbrf.platformmanagement.ufs.api.model.GroupFlagDto;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public class GroupService {
 
     private final UserGroupRepository userGroupRepository;
-    private final AppUserRepository appUserRepository;
+    private final UserRepository userRepository;
     private final UserGroupMemberRepository userGroupMemberRepository;
     private final FlagGroupValueRepository flagGroupValueRepository;
     private final FlagRepository flagRepository;
@@ -81,23 +81,24 @@ public class GroupService {
     public UfsPageListRs<UserDto> getGroupUsers(Long id, UfsPageRequest pageRequest, String sort,
                                                  String lastName, String firstName, String tabNum) {
         requireExists(id);
-        Sort resolvedSort = SortResolver.resolve(sort, AppUserSpecifications.SORT_WHITELIST, "id");
+        Sort resolvedSort = SortResolver.resolve(sort, UserSpecifications.SORT_WHITELIST, "id");
         Pageable pageable = CommonMapper.map(pageRequest, resolvedSort);
-        Specification<AppUserEntity> spec = Specifications.allOf(
-                AppUserSpecifications.memberOfGroup(id),
-                AppUserSpecifications.lastNameContains(lastName),
-                AppUserSpecifications.firstNameContains(firstName),
-                AppUserSpecifications.tabNumEquals(tabNum));
-        Page<AppUserEntity> result = appUserRepository.findAll(spec, pageable);
+        Specification<UserEntity> spec = Specifications.allOf(
+                UserSpecifications.memberOfGroup(id),
+                UserSpecifications.lastNameContains(lastName),
+                UserSpecifications.firstNameContains(firstName),
+                UserSpecifications.tabNumEquals(tabNum));
+        Page<UserEntity> result = userRepository.findAll(spec, pageable);
         return UfsPageListRs.of(result.getContent().stream().map(UserMapper::toDto).toList(),
                 pageRequest, result.getTotalPages(), result.getTotalElements());
     }
 
     @Transactional
-    public boolean addGroupUsers(Long id, List<String> userIds) {
-        if (!userGroupRepository.existsById(id) || userIds == null || userIds.isEmpty()) {
+    public boolean addGroupUsers(Long id, List<String> tabNums) {
+        if (!userGroupRepository.existsById(id) || tabNums == null || tabNums.isEmpty()) {
             return false;
         }
+        List<Long> userIds = resolveTabNums(tabNums);
         try {
             List<UserGroupMemberEntity> rows = userIds.stream()
                     .map(userId -> new UserGroupMemberEntity(userId, id))
@@ -110,12 +111,21 @@ public class GroupService {
     }
 
     @Transactional
-    public boolean removeGroupUsers(Long id, List<String> userIds) {
-        if (!userGroupRepository.existsById(id) || userIds == null || userIds.isEmpty()) {
+    public boolean removeGroupUsers(Long id, List<String> tabNums) {
+        if (!userGroupRepository.existsById(id) || tabNums == null || tabNums.isEmpty()) {
             return false;
         }
-        userGroupMemberRepository.deleteByGroupIdAndUserIds(id, userIds);
+        userGroupMemberRepository.deleteByGroupIdAndUserIds(id, resolveTabNums(tabNums));
         return true;
+    }
+
+    /** Публичный контракт передаёт tab_num — резолвим пачкой во внутренний id одним запросом. */
+    private List<Long> resolveTabNums(List<String> tabNums) {
+        List<UserEntity> users = userRepository.findAllByTabNumIn(tabNums);
+        if (users.size() != tabNums.stream().distinct().count()) {
+            throw new BadRequestException("One of the given user ids does not exist");
+        }
+        return users.stream().map(UserEntity::getId).toList();
     }
 
     public List<GroupFlagDto> getGroupFlags(Long id) {
