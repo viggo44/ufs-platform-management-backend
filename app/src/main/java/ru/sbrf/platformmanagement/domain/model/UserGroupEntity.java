@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,14 +20,15 @@ import java.time.Instant;
  * слово Postgres.
  */
 @Entity
-@Table(name = "user_group")
+@Table(name = "user_group", schema = "ssv_db")
 @Getter
 @Setter
 @NoArgsConstructor
 public class UserGroupEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_group_id_seq")
+    @SequenceGenerator(name = "user_group_id_seq", sequenceName = "user_group_id_seq", schema = "ssv_db", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, unique = true)

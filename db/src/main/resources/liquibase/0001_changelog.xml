@@ -5,9 +5,14 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd">
 
-    <changeSet id="0001-01-create-flag" author="platform-management">
-        <createTable tableName="flag">
-            <column name="id" type="BIGINT" autoIncrement="true">
+    <changeSet id="1789557381953-01" author="sigitov-aa">
+        <sql>CREATE SCHEMA IF NOT EXISTS ssv_db;</sql>
+    </changeSet>
+
+    <changeSet id="1789557381953-02" author="sigitov-aa">
+        <createSequence schemaName="ssv_db" sequenceName="flag_id_seq" startValue="1" incrementBy="1"/>
+        <createTable schemaName="ssv_db" tableName="flag">
+            <column name="id" type="BIGINT" defaultValueSequenceNext="flag_id_seq">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)">
@@ -35,9 +40,10 @@
         по-прежнему адресует пользователя по tab_num (согласовано) — id наружу не отдаётся,
         сервисный слой транслирует tab_num -> id перед тем, как идти в связанные таблицы.
     -->
-    <changeSet id="0001-02-create-user" author="platform-management">
-        <createTable tableName="user">
-            <column name="id" type="BIGINT" autoIncrement="true">
+    <changeSet id="1789557381953-03" author="sigitov-aa">
+        <createSequence schemaName="ssv_db" sequenceName="user_id_seq" startValue="1" incrementBy="1"/>
+        <createTable schemaName="ssv_db" tableName="user">
+            <column name="id" type="BIGINT" defaultValueSequenceNext="user_id_seq">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="tab_num" type="VARCHAR(32)">
@@ -64,20 +70,21 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <createIndex indexName="idx_user_last_first_name" tableName="user">
+        <createIndex schemaName="ssv_db" indexName="idx_user_last_first_name" tableName="user">
             <column name="last_name"/>
             <column name="first_name"/>
         </createIndex>
         <!-- Postgres treats multiple NULLs as distinct in a unique index, so this behaves
              like the original partial "where login is not null" index without needing one. -->
-        <createIndex indexName="uk_user_login" tableName="user" unique="true">
+        <createIndex schemaName="ssv_db" indexName="uk_user_login" tableName="user" unique="true">
             <column name="login"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="0001-03-create-user-group" author="platform-management">
-        <createTable tableName="user_group">
-            <column name="id" type="BIGINT" autoIncrement="true">
+    <changeSet id="1789557381953-04" author="sigitov-aa">
+        <createSequence schemaName="ssv_db" sequenceName="user_group_id_seq" startValue="1" incrementBy="1"/>
+        <createTable schemaName="ssv_db" tableName="user_group">
+            <column name="id" type="BIGINT" defaultValueSequenceNext="user_group_id_seq">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)">
@@ -93,8 +100,13 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="0001-04-create-user-group-member" author="platform-management">
-        <createTable tableName="user_group_member">
+    <!--
+        Без payload — чистая связка, поэтому на Java-стороне это @ManyToMany на UserEntity
+        (@JoinTable), а не отдельная entity. Bulk-запись (add/removeGroupUsers) идёт нативным
+        SQL напрямую по этой таблице, не через управление коллекцией.
+    -->
+    <changeSet id="1789557381953-05" author="sigitov-aa">
+        <createTable schemaName="ssv_db" tableName="user_group_member">
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -105,21 +117,31 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="user_group_member" columnNames="user_id, group_id"
+        <addPrimaryKey schemaName="ssv_db" tableName="user_group_member" columnNames="user_id, group_id"
                         constraintName="pk_user_group_member"/>
-        <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="user_id"
-                                  referencedTableName="user" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_group_member" baseColumnNames="user_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_ugm_user" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="user_group_member" baseColumnNames="group_id"
-                                  referencedTableName="user_group" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_group_member" baseColumnNames="group_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user_group" referencedColumnNames="id"
                                   constraintName="fk_ugm_group" onDelete="CASCADE"/>
-        <createIndex indexName="idx_ugm_group" tableName="user_group_member">
+        <createIndex schemaName="ssv_db" indexName="idx_ugm_group" tableName="user_group_member">
             <column name="group_id"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="0001-05-create-flag-user-value" author="platform-management">
-        <createTable tableName="flag_user_value">
+    <!--
+        id — суррогатный PK вместо составного (flag_id, user_id): у этой таблицы есть payload
+        (value), поэтому чистый @ManyToMany невозможен — нужна отдельная join-сущность с
+        собственным Id и @ManyToOne на Flag/User. Уникальность пары обеспечивает отдельный
+        constraint, не PK.
+    -->
+    <changeSet id="1789557381953-06" author="sigitov-aa">
+        <createSequence schemaName="ssv_db" sequenceName="flag_user_value_id_seq" startValue="1" incrementBy="1"/>
+        <createTable schemaName="ssv_db" tableName="flag_user_value">
+            <column name="id" type="BIGINT" defaultValueSequenceNext="flag_user_value_id_seq">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
             <column name="flag_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -131,21 +153,25 @@
             </column>
             <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()"/>
         </createTable>
-        <addPrimaryKey tableName="flag_user_value" columnNames="flag_id, user_id"
-                        constraintName="pk_flag_user_value"/>
-        <addForeignKeyConstraint baseTableName="flag_user_value" baseColumnNames="flag_id"
-                                  referencedTableName="flag" referencedColumnNames="id"
+        <addUniqueConstraint schemaName="ssv_db" tableName="flag_user_value" columnNames="flag_id, user_id"
+                              constraintName="uk_flag_user_value"/>
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="flag_user_value" baseColumnNames="flag_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="flag" referencedColumnNames="id"
                                   constraintName="fk_fuv_flag" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="flag_user_value" baseColumnNames="user_id"
-                                  referencedTableName="user" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="flag_user_value" baseColumnNames="user_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_fuv_user" onDelete="CASCADE"/>
-        <createIndex indexName="idx_fuv_user" tableName="flag_user_value">
+        <createIndex schemaName="ssv_db" indexName="idx_fuv_user" tableName="flag_user_value">
             <column name="user_id"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="0001-06-create-flag-group-value" author="platform-management">
-        <createTable tableName="flag_group_value">
+    <changeSet id="1789557381953-07" author="sigitov-aa">
+        <createSequence schemaName="ssv_db" sequenceName="flag_group_value_id_seq" startValue="1" incrementBy="1"/>
+        <createTable schemaName="ssv_db" tableName="flag_group_value">
+            <column name="id" type="BIGINT" defaultValueSequenceNext="flag_group_value_id_seq">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
             <column name="flag_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -157,27 +183,27 @@
             </column>
             <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()"/>
         </createTable>
-        <addPrimaryKey tableName="flag_group_value" columnNames="flag_id, group_id"
-                        constraintName="pk_flag_group_value"/>
-        <addForeignKeyConstraint baseTableName="flag_group_value" baseColumnNames="flag_id"
-                                  referencedTableName="flag" referencedColumnNames="id"
+        <addUniqueConstraint schemaName="ssv_db" tableName="flag_group_value" columnNames="flag_id, group_id"
+                              constraintName="uk_flag_group_value"/>
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="flag_group_value" baseColumnNames="flag_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="flag" referencedColumnNames="id"
                                   constraintName="fk_fgv_flag" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="flag_group_value" baseColumnNames="group_id"
-                                  referencedTableName="user_group" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="flag_group_value" baseColumnNames="group_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user_group" referencedColumnNames="id"
                                   constraintName="fk_fgv_group" onDelete="CASCADE"/>
-        <createIndex indexName="idx_fgv_group" tableName="flag_group_value">
+        <createIndex schemaName="ssv_db" indexName="idx_fgv_group" tableName="flag_group_value">
             <column name="group_id"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="0001-07-create-usersync-dictionaries" author="platform-management">
-        <createTable tableName="sudir_role_dict">
+    <changeSet id="1789557381953-08" author="sigitov-aa">
+        <createTable schemaName="ssv_db" tableName="sudir_role_dict">
             <column name="code" type="VARCHAR(128)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
         </createTable>
-        <createTable tableName="permission_dict">
+        <createTable schemaName="ssv_db" tableName="permission_dict">
             <column name="code" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -185,8 +211,8 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="0001-08-create-usersync-links" author="platform-management">
-        <createTable tableName="user_sudir_role">
+    <changeSet id="1789557381953-09" author="sigitov-aa">
+        <createTable schemaName="ssv_db" tableName="user_sudir_role">
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -194,16 +220,16 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="user_sudir_role" columnNames="user_id, sudir_role_code"
+        <addPrimaryKey schemaName="ssv_db" tableName="user_sudir_role" columnNames="user_id, sudir_role_code"
                         constraintName="pk_user_sudir_role"/>
-        <addForeignKeyConstraint baseTableName="user_sudir_role" baseColumnNames="user_id"
-                                  referencedTableName="user" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_sudir_role" baseColumnNames="user_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_usr_user" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="user_sudir_role" baseColumnNames="sudir_role_code"
-                                  referencedTableName="sudir_role_dict" referencedColumnNames="code"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_sudir_role" baseColumnNames="sudir_role_code"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="sudir_role_dict" referencedColumnNames="code"
                                   constraintName="fk_usr_role"/>
 
-        <createTable tableName="user_permission">
+        <createTable schemaName="ssv_db" tableName="user_permission">
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -211,13 +237,13 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="user_permission" columnNames="user_id, permission_code"
+        <addPrimaryKey schemaName="ssv_db" tableName="user_permission" columnNames="user_id, permission_code"
                         constraintName="pk_user_permission"/>
-        <addForeignKeyConstraint baseTableName="user_permission" baseColumnNames="user_id"
-                                  referencedTableName="user" referencedColumnNames="id"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_permission" baseColumnNames="user_id"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="user" referencedColumnNames="id"
                                   constraintName="fk_up_user" onDelete="CASCADE"/>
-        <addForeignKeyConstraint baseTableName="user_permission" baseColumnNames="permission_code"
-                                  referencedTableName="permission_dict" referencedColumnNames="code"
+        <addForeignKeyConstraint baseTableSchemaName="ssv_db" baseTableName="user_permission" baseColumnNames="permission_code"
+                                  referencedTableSchemaName="ssv_db" referencedTableName="permission_dict" referencedColumnNames="code"
                                   constraintName="fk_up_permission"/>
     </changeSet>
 

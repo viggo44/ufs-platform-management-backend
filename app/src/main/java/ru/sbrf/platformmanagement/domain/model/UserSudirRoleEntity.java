@@ -9,23 +9,22 @@ import lombok.Setter;
 import org.hibernate.annotations.Immutable;
 
 /**
- * Строка связи членства в группе. Простые скалярные id (без {@code @ManyToOne}) — чтение
- * идёт через явные джойны в репозитории, а не через навигацию по графу объектов.
+ * Какая роль ССД назначена пользователю на момент последней синхронизации.
  * Только insert/delete, поле никогда не апдейтится — {@code @Immutable} убирает
  * лишний dirty-checking снапшот и защищает от случайного UPDATE через managed-сущность.
  */
 @Entity
-@Table(name = "user_group_member")
+@Table(name = "user_sudir_role", schema = "ssv_db")
 @Getter
 @Setter
 @NoArgsConstructor
 @Immutable
-public class UserGroupMemberEntity {
+public class UserSudirRoleEntity {
 
     @EmbeddedId
-    private UserGroupMemberId id;
+    private UserSudirRoleId id;
 
-    public UserGroupMemberEntity(Long userId, Long groupId) {
-        this.id = new UserGroupMemberId(userId, groupId);
+    public UserSudirRoleEntity(Long userId, String sudirRoleCode) {
+        this.id = new UserSudirRoleId(userId, sudirRoleCode);
     }
 }

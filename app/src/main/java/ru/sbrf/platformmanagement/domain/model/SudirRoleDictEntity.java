@@ -8,13 +8,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Справочник кодов пермишенов ССД, встреченных через логин. Заполняется только login-sync. */
+/** Справочник кодов ролей ССД, встреченных через логин. Заполняется только login-sync. */
 @Entity
-@Table(name = "permission_dict", schema = "ssv_db")
+@Table(name = "sudir_role_dict", schema = "ssv_db")
 @Getter
 @Setter
 @NoArgsConstructor
-public class PermissionDictEntity {
+public class SudirRoleDictEntity {
 
     @Id
     private String code;
@@ -22,7 +22,7 @@ public class PermissionDictEntity {
     @Column
     private String name;
 
-    public PermissionDictEntity(String code, String name) {
+    public SudirRoleDictEntity(String code, String name) {
         this.code = code;
         this.name = name;
     }

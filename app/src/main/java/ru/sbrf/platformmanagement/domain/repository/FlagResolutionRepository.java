@@ -25,12 +25,12 @@ public interface FlagResolutionRepository extends Repository<FlagEntity, Long> {
                    when fuv.value is not null then fuv.value
                    when gv.group_value is not null then gv.group_value
                    else f.default_value end as value
-            from flag f
-            left join flag_user_value fuv on fuv.flag_id = f.id and fuv.user_id = :userId
+            from ssv_db.flag f
+            left join ssv_db.flag_user_value fuv on fuv.flag_id = f.id and fuv.user_id = :userId
             left join (
               select fgv.flag_id as flag_id, bool_or(fgv.value) as group_value
-              from flag_group_value fgv
-              join user_group_member m on m.group_id = fgv.group_id and m.user_id = :userId
+              from ssv_db.flag_group_value fgv
+              join ssv_db.user_group_member m on m.group_id = fgv.group_id and m.user_id = :userId
               group by fgv.flag_id
             ) gv on gv.flag_id = f.id
             where (:customOnly = false or fuv.value is not null or gv.group_value is not null)

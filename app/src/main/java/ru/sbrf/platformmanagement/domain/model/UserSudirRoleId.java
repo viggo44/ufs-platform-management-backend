@@ -15,7 +15,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class FlagGroupValueId implements Serializable {
-    private Long flagId;
-    private Long groupId;
+public class UserSudirRoleId implements Serializable {
+    private Long userId;
+    private String sudirRoleCode;
 }

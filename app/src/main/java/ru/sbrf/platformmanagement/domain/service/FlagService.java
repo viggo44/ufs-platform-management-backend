@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.sbrf.platformmanagement.domain.model.FlagEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagGroupValueEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagUserValueEntity;
+import ru.sbrf.platformmanagement.domain.model.UserEntity;
 import ru.sbrf.platformmanagement.domain.model.UserGroupEntity;
 import ru.sbrf.platformmanagement.domain.repository.FlagGroupValueRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagRepository;
@@ -37,7 +38,6 @@ import ru.sbrf.platformmanagement.web.mapper.FlagMapper;
 import ru.sbrf.platformmanagement.web.mapper.GroupMapper;
 import ru.sbrf.platformmanagement.web.mapper.SortResolver;
 import ru.sbrf.platformmanagement.web.mapper.UserMapper;
-import ru.sbrf.platformmanagement.domain.model.UserEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -85,26 +85,36 @@ public class FlagService {
         return buildFlagInfo(id);
     }
 
+    /**
+     * {@code getReferenceById} — прокси без {@code SELECT}, id уже известен и это всё, что
+     * нужно, чтобы проставить FK на insert. {@code userIds} резолвятся и проверяются заранее
+     * ({@code resolveTabNums}); для {@code groupIds} такой предварительной проверки нет —
+     * несуществующий id всплывёт только на FK constraint при {@code saveAll}, отсюда и
+     * перехват {@link DataIntegrityViolationException}.
+     */
     @Transactional
     public FlagInfoDto patchFlagInfo(Long id, FlagInfoPatchDto request) {
         requireExists(id);
+        FlagEntity flagRef = flagRepository.getReferenceById(id);
         try {
             if (request.getUserIds() != null && !request.getUserIds().isEmpty()) {
                 Map<String, Long> idsByTabNum = resolveTabNums(
                         request.getUserIds().stream().map(ValuedFlagDto::getData).toList());
                 List<FlagUserValueEntity> rows = request.getUserIds().stream()
-                        .map(v -> new FlagUserValueEntity(id, requireResolved(idsByTabNum, v.getData()), v.getValue()))
+                        .map(v -> new FlagUserValueEntity(flagRef,
+                                userRepository.getReferenceById(requireResolved(idsByTabNum, v.getData())),
+                                v.getValue()))
                         .toList();
                 flagUserValueRepository.saveAll(rows);
             }
             if (request.getGroupIds() != null && !request.getGroupIds().isEmpty()) {
                 List<FlagGroupValueEntity> rows = request.getGroupIds().stream()
-                        .map(v -> new FlagGroupValueEntity(id, v.getData(), v.getValue()))
+                        .map(v -> new FlagGroupValueEntity(flagRef, userGroupRepository.getReferenceById(v.getData()), v.getValue()))
                         .toList();
                 flagGroupValueRepository.saveAll(rows);
             }
         } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException("One of the given user/group ids does not exist");
+            throw new BadRequestException("One of the given group ids does not exist");
         }
         return buildFlagInfo(id);
     }
@@ -138,21 +148,26 @@ public class FlagService {
         return true;
     }
 
+    /**
+     * {@code .getUser().getId()}/{@code .getGroup().getId()} не бьют в БД — id уже в FK-
+     * колонке связи, и это единственное, что здесь читается со связи напрямую. Сами
+     * сущности — одним bulk {@code findAllById} каждая, а не по одной на строку.
+     */
     private FlagInfoDto buildFlagInfo(Long flagId) {
-        List<FlagUserValueEntity> userValues = flagUserValueRepository.findAllById_FlagId(flagId);
+        List<FlagUserValueEntity> userValues = flagUserValueRepository.findAllByFlag_Id(flagId);
         Map<Long, UserEntity> usersById = index(
-                userRepository.findAllById(userValues.stream().map(v -> v.getId().getUserId()).toList()),
+                userRepository.findAllById(userValues.stream().map(v -> v.getUser().getId()).toList()),
                 UserEntity::getId);
         List<ValuedFlagDto<UserDto>> users = userValues.stream()
-                .map(v -> new ValuedFlagDto<>(UserMapper.toDto(usersById.get(v.getId().getUserId())), v.isValue()))
+                .map(v -> new ValuedFlagDto<>(UserMapper.toDto(usersById.get(v.getUser().getId())), v.isValue()))
                 .toList();
 
-        List<FlagGroupValueEntity> groupValues = flagGroupValueRepository.findAllById_FlagId(flagId);
+        List<FlagGroupValueEntity> groupValues = flagGroupValueRepository.findAllByFlag_Id(flagId);
         Map<Long, UserGroupEntity> groupsById = index(
-                userGroupRepository.findAllById(groupValues.stream().map(v -> v.getId().getGroupId()).toList()),
+                userGroupRepository.findAllById(groupValues.stream().map(v -> v.getGroup().getId()).toList()),
                 UserGroupEntity::getId);
         List<ValuedFlagDto<GroupDto>> groups = groupValues.stream()
-                .map(v -> new ValuedFlagDto<>(GroupMapper.toDto(groupsById.get(v.getId().getGroupId())), v.isValue()))
+                .map(v -> new ValuedFlagDto<>(GroupMapper.toDto(groupsById.get(v.getGroup().getId())), v.isValue()))
                 .toList();
 
         return new FlagInfoDto(users, groups);

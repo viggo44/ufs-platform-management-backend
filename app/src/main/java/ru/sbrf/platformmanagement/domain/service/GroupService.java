@@ -3,7 +3,6 @@ package ru.sbrf.platformmanagement.domain.service;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,12 +13,10 @@ import ru.sbrf.platformmanagement.domain.model.FlagEntity;
 import ru.sbrf.platformmanagement.domain.model.FlagGroupValueEntity;
 import ru.sbrf.platformmanagement.domain.model.UserEntity;
 import ru.sbrf.platformmanagement.domain.model.UserGroupEntity;
-import ru.sbrf.platformmanagement.domain.model.UserGroupMemberEntity;
 import ru.sbrf.platformmanagement.domain.repository.FlagGroupValueRepository;
 import ru.sbrf.platformmanagement.domain.repository.FlagRepository;
 import ru.sbrf.platformmanagement.domain.repository.GroupSpecifications;
 import ru.sbrf.platformmanagement.domain.repository.Specifications;
-import ru.sbrf.platformmanagement.domain.repository.UserGroupMemberRepository;
 import ru.sbrf.platformmanagement.domain.repository.UserGroupRepository;
 import ru.sbrf.platformmanagement.domain.repository.UserRepository;
 import ru.sbrf.platformmanagement.domain.repository.UserSpecifications;
@@ -32,7 +29,6 @@ import ru.sbrf.platformmanagement.ufs.api.model.UfsPageListRs;
 import ru.sbrf.platformmanagement.ufs.api.model.UfsPageRequest;
 import ru.sbrf.platformmanagement.ufs.api.model.UserDto;
 import ru.sbrf.platformmanagement.web.mapper.CommonMapper;
-import ru.sbrf.platformmanagement.web.mapper.FlagMapper;
 import ru.sbrf.platformmanagement.web.mapper.GroupMapper;
 import ru.sbrf.platformmanagement.web.mapper.SortResolver;
 import ru.sbrf.platformmanagement.web.mapper.UserMapper;
@@ -49,7 +45,6 @@ public class GroupService {
 
     private final UserGroupRepository userGroupRepository;
     private final UserRepository userRepository;
-    private final UserGroupMemberRepository userGroupMemberRepository;
     private final FlagGroupValueRepository flagGroupValueRepository;
     private final FlagRepository flagRepository;
 
@@ -98,15 +93,8 @@ public class GroupService {
         if (!userGroupRepository.existsById(id) || tabNums == null || tabNums.isEmpty()) {
             return false;
         }
-        List<Long> userIds = resolveTabNums(tabNums);
-        try {
-            List<UserGroupMemberEntity> rows = userIds.stream()
-                    .map(userId -> new UserGroupMemberEntity(userId, id))
-                    .toList();
-            userGroupMemberRepository.saveAll(rows);
-        } catch (DataIntegrityViolationException e) {
-            throw new BadRequestException("One of the given user ids does not exist");
-        }
+        Long[] userIds = resolveTabNums(tabNums).toArray(Long[]::new);
+        userGroupRepository.addMembers(id, userIds);
         return true;
     }
 
@@ -115,7 +103,7 @@ public class GroupService {
         if (!userGroupRepository.existsById(id) || tabNums == null || tabNums.isEmpty()) {
             return false;
         }
-        userGroupMemberRepository.deleteByGroupIdAndUserIds(id, resolveTabNums(tabNums));
+        userGroupRepository.removeMembers(id, resolveTabNums(tabNums));
         return true;
     }
 
@@ -130,14 +118,14 @@ public class GroupService {
 
     public List<GroupFlagDto> getGroupFlags(Long id) {
         requireExists(id);
-        List<FlagGroupValueEntity> values = flagGroupValueRepository.findAllById_GroupId(id);
+        List<FlagGroupValueEntity> values = flagGroupValueRepository.findAllByGroup_Id(id);
         Map<Long, FlagEntity> flagsById = flagRepository.findAllById(
-                        values.stream().map(v -> v.getId().getFlagId()).toList()).stream()
+                        values.stream().map(v -> v.getFlag().getId()).toList()).stream()
                 .collect(Collectors.toMap(FlagEntity::getId, Function.identity()));
 
         return values.stream()
                 .map(v -> {
-                    FlagDto flag = FlagMapper.toDto(flagsById.get(v.getId().getFlagId()));
+                    FlagDto flag = FlagMapper.toDto(flagsById.get(v.getFlag().getId()));
                     return new GroupFlagDto(flag.getId(), flag.getName(), flag.getDesc(), v.isValue());
                 })
                 .toList();
@@ -149,7 +137,7 @@ public class GroupService {
             return false;
         }
         flagGroupValueRepository.deleteAllByGroupId(id);
-        userGroupMemberRepository.deleteAllByGroupId(id);
+        userGroupRepository.deleteAllByGroupId(id);
         userGroupRepository.deleteById(id);
         return true;
     }

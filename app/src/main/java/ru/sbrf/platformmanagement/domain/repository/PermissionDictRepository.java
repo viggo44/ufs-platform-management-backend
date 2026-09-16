@@ -13,7 +13,7 @@ public interface PermissionDictRepository extends JpaRepository<PermissionDictEn
      * {@link SudirRoleDictRepository#upsertMissing} — то же соображение для пермишенов.
      */
     @Modifying
-    @Query(value = "insert into permission_dict(code, name) select c, c from unnest(:codes) as c "
+    @Query(value = "insert into ssv_db.permission_dict(code, name) select c, c from unnest(:codes) as c "
             + "on conflict (code) do nothing", nativeQuery = true)
     void upsertMissing(@Param("codes") String[] codes);
 }

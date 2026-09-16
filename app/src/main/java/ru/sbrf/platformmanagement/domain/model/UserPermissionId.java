@@ -15,7 +15,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class UserGroupMemberId implements Serializable {
+public class UserPermissionId implements Serializable {
     private Long userId;
-    private Long groupId;
+    private String permissionCode;
 }

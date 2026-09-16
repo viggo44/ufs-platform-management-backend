@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,14 +16,15 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "flag")
+@Table(name = "flag", schema = "ssv_db")
 @Getter
 @Setter
 @NoArgsConstructor
 public class FlagEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "flag_id_seq")
+    @SequenceGenerator(name = "flag_id_seq", sequenceName = "flag_id_seq", schema = "ssv_db", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, unique = true)
