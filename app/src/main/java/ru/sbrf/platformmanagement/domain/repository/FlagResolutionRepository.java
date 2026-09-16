@@ -36,5 +36,5 @@ public interface FlagResolutionRepository extends Repository<FlagEntity, Long> {
             where (:customOnly = false or fuv.value is not null or gv.group_value is not null)
             order by f.id
             """, nativeQuery = true)
-    List<UserFlagResolutionRow> resolveForUser(@Param("userId") Long userId, @Param("customOnly") boolean customOnly);
+    List<UserFlagResolutionRow> resolveForUser(@Param("userId") String userId, @Param("customOnly") boolean customOnly);
 }

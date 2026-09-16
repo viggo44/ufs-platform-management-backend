@@ -16,6 +16,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class AppUserRoleId implements Serializable {
-    private Long userId;
+    private String userId;
     private String roleCode;
 }

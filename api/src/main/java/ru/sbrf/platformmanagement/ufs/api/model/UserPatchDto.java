@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserPatchDto {
-    private Long tabNum;
+    private String tabNum;
     private String lastName;
     private String firstName;
     private String middleName;

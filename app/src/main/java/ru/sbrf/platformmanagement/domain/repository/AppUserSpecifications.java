@@ -27,7 +27,7 @@ public final class AppUserSpecifications {
         return contains("firstName", value);
     }
 
-    public static Specification<AppUserEntity> tabNumEquals(Long value) {
+    public static Specification<AppUserEntity> tabNumEquals(String value) {
         if (value == null) {
             return null;
         }
@@ -40,7 +40,7 @@ public final class AppUserSpecifications {
             return null;
         }
         return (root, query, cb) -> {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<String> subquery = query.subquery(String.class);
             var member = subquery.from(UserGroupMemberEntity.class);
             subquery.select(member.get("id").get("userId"));
             subquery.where(cb.equal(member.get("id").get("groupId"), groupId));

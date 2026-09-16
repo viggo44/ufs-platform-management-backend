@@ -15,14 +15,14 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SyncFingerprintCache {
 
-    private final Cache<Long, String> cache;
+    private final Cache<String, String> cache;
 
-    public boolean isUpToDate(Long tabNum, String fingerprint) {
+    public boolean isUpToDate(String tabNum, String fingerprint) {
         String cached = cache.getIfPresent(tabNum);
         return cached != null && cached.equals(fingerprint);
     }
 
-    public void markSynced(Long tabNum, String fingerprint) {
+    public void markSynced(String tabNum, String fingerprint) {
         cache.put(tabNum, fingerprint);
     }
 }

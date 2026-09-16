@@ -38,7 +38,7 @@ public class UserController {
     }
 
     @PATCH
-    public UserDto patchUser(@QueryParam("id") Long id, @Valid UserPatchDto request) {
+    public UserDto patchUser(@QueryParam("id") String id, @Valid UserPatchDto request) {
         return appUserService.patchUser(RequireParam.notNull(id, "id"), request);
     }
 
@@ -48,7 +48,7 @@ public class UserController {
                                             @QueryParam("sort") String sort,
                                             @QueryParam("lastName") String lastName,
                                             @QueryParam("firstName") String firstName,
-                                            @QueryParam("tabNum") Long tabNum) {
+                                            @QueryParam("tabNum") String tabNum) {
         UfsPageRequest pageRequest = new UfsPageRequest(
                 RequireParam.notNull(page, "page"), RequireParam.notNull(limit, "limit"));
         return appUserService.getUsers(pageRequest, sort, lastName, firstName, tabNum);
@@ -56,19 +56,19 @@ public class UserController {
 
     @GET
     @Path("/groups")
-    public List<GroupDto> getUserGroups(@QueryParam("id") Long id) {
+    public List<GroupDto> getUserGroups(@QueryParam("id") String id) {
         return appUserService.getUserGroups(RequireParam.notNull(id, "id"));
     }
 
     @GET
     @Path("/flags")
-    public List<UserFlagDto> getUserFlags(@QueryParam("id") Long id,
+    public List<UserFlagDto> getUserFlags(@QueryParam("id") String id,
                                            @QueryParam("customOnly") @DefaultValue("false") boolean customOnly) {
         return appUserService.getUserFlags(RequireParam.notNull(id, "id"), customOnly);
     }
 
     @DELETE
-    public boolean deleteUser(@QueryParam("id") Long id) {
+    public boolean deleteUser(@QueryParam("id") String id) {
         return appUserService.deleteUser(RequireParam.notNull(id, "id"));
     }
 }

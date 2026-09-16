@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FlagInfoDeleteDto {
-    private List<Long> userIds;
+    private List<String> userIds;
     private List<Long> groupIds;
 }

@@ -79,7 +79,7 @@ public class GroupService {
     }
 
     public UfsPageListRs<UserDto> getGroupUsers(Long id, UfsPageRequest pageRequest, String sort,
-                                                 String lastName, String firstName, Long tabNum) {
+                                                 String lastName, String firstName, String tabNum) {
         requireExists(id);
         Sort resolvedSort = SortResolver.resolve(sort, AppUserSpecifications.SORT_WHITELIST, "id");
         Pageable pageable = CommonMapper.map(pageRequest, resolvedSort);
@@ -94,7 +94,7 @@ public class GroupService {
     }
 
     @Transactional
-    public boolean addGroupUsers(Long id, List<Long> userIds) {
+    public boolean addGroupUsers(Long id, List<String> userIds) {
         if (!userGroupRepository.existsById(id) || userIds == null || userIds.isEmpty()) {
             return false;
         }
@@ -110,7 +110,7 @@ public class GroupService {
     }
 
     @Transactional
-    public boolean removeGroupUsers(Long id, List<Long> userIds) {
+    public boolean removeGroupUsers(Long id, List<String> userIds) {
         if (!userGroupRepository.existsById(id) || userIds == null || userIds.isEmpty()) {
             return false;
         }

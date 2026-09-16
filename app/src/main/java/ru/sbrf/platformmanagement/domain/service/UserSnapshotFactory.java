@@ -18,7 +18,7 @@ public class UserSnapshotFactory {
         List<String> roleCodes = normalize(request.getRoles() == null ? List.of() : request.getRoles());
         List<String> permissionCodes = normalize(request.getPermissions() == null ? List.of() : request.getPermissions());
 
-        Long employeeNumberParsed = parseEmployeeNumber(request.getEmployeeNumber());
+        String tabNum = normalizeTabNum(request.getEmployeeNumber());
 
         String fingerprint = sha256Hex(String.join("|",
                 nullToEmpty(request.getUserId()),
@@ -41,7 +41,7 @@ public class UserSnapshotFactory {
                 request.getFirstName(),
                 request.getMiddleName(),
                 request.getEmployeeNumber(),
-                employeeNumberParsed,
+                tabNum,
                 request.getDepartmentNumber(),
                 request.getIssuer(),
                 roleCodes,
@@ -57,16 +57,12 @@ public class UserSnapshotFactory {
                 .toList();
     }
 
-    /** Никогда не роняет синхронизацию из-за некорректного табельного номера — просто получаем null. */
-    private Long parseEmployeeNumber(String raw) {
+    /** Табельный номер может быть не чисто числовым — просто обрезаем края, не парсим. */
+    private String normalizeTabNum(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;
         }
-        try {
-            return Long.parseLong(raw.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return raw.trim();
     }
 
     private String nullToEmpty(String value) {

@@ -134,7 +134,7 @@ public class FlagService {
 
     private FlagInfoDto buildFlagInfo(Long flagId) {
         List<FlagUserValueEntity> userValues = flagUserValueRepository.findAllById_FlagId(flagId);
-        Map<Long, AppUserEntity> usersById = index(
+        Map<String, AppUserEntity> usersById = index(
                 appUserRepository.findAllById(userValues.stream().map(v -> v.getId().getUserId()).toList()),
                 AppUserEntity::getTabNum);
         List<ValuedFlagDto<UserDto>> users = userValues.stream()

@@ -22,7 +22,7 @@ public class CaffeineCacheConfig {
      * поменялось.
      */
     @Bean(USER_SYNC_FINGERPRINT_CACHE)
-    public Cache<Long, String> userSyncFingerprintCache() {
+    public Cache<String, String> userSyncFingerprintCache() {
         return Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofHours(properties.refreshHours()))
                 .maximumSize(properties.cacheMaximumSize())

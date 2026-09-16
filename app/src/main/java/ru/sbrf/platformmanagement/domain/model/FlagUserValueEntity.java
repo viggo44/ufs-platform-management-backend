@@ -28,10 +28,9 @@ public class FlagUserValueEntity {
     @Column(nullable = false)
     private boolean value;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
-    public FlagUserValueEntity(Long flagId, Long userId, boolean value) {
+    public FlagUserValueEntity(Long flagId, String userId, boolean value) {
         this.id = new FlagUserValueId(flagId, userId);
         this.value = value;
     }

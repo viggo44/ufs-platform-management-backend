@@ -24,7 +24,7 @@ public class AppUserPermissionEntity {
     @EmbeddedId
     private AppUserPermissionId id;
 
-    public AppUserPermissionEntity(Long userId, String permissionCode) {
+    public AppUserPermissionEntity(String userId, String permissionCode) {
         this.id = new AppUserPermissionId(userId, permissionCode);
     }
 }

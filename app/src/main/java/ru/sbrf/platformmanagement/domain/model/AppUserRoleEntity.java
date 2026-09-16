@@ -24,7 +24,7 @@ public class AppUserRoleEntity {
     @EmbeddedId
     private AppUserRoleId id;
 
-    public AppUserRoleEntity(Long userId, String roleCode) {
+    public AppUserRoleEntity(String userId, String roleCode) {
         this.id = new AppUserRoleId(userId, roleCode);
     }
 }

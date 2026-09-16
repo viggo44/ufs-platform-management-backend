@@ -18,5 +18,5 @@ public interface UserGroupRepository extends JpaRepository<UserGroupEntity, Long
             where g.id in (select m.id.groupId from UserGroupMemberEntity m where m.id.userId = :userId)
             order by g.id
             """)
-    List<UserGroupEntity> findAllByMemberUserId(@Param("userId") Long userId);
+    List<UserGroupEntity> findAllByMemberUserId(@Param("userId") String userId);
 }

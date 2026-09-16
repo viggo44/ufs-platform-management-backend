@@ -11,6 +11,9 @@ import java.util.List;
  * @param permissionCodes отсортированы, без дублей
  * @param fingerprint     hex-дайджест SHA-256 по всем полям выше; используется, чтобы
  *                        пропустить пересинхронизацию, если ничего не изменилось
+ * @param tabNum          {@code employeeNumberRaw}, обрезанный по краям, или {@code null},
+ *                        если пусто — табельный номер может быть не чисто числовым, поэтому
+ *                        это строка, а не распарсенное число
  */
 public record UserSnapshot(
         String userId,
@@ -20,7 +23,7 @@ public record UserSnapshot(
         String firstName,
         String middleName,
         String employeeNumberRaw,
-        Long employeeNumberParsed,
+        String tabNum,
         String departmentNumber,
         String issuer,
         List<String> roleCodes,

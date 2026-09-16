@@ -12,13 +12,13 @@ import java.util.List;
 
 public interface AppUserRoleRepository extends JpaRepository<AppUserRoleEntity, AppUserRoleId> {
 
-    List<AppUserRoleEntity> findAllById_UserId(Long userId);
+    List<AppUserRoleEntity> findAllById_UserId(String userId);
 
     @Modifying
     @Query("delete from AppUserRoleEntity r where r.id.userId = :userId and r.id.roleCode not in :codes")
-    void deleteStale(@Param("userId") Long userId, @Param("codes") Collection<String> codes);
+    void deleteStale(@Param("userId") String userId, @Param("codes") Collection<String> codes);
 
     @Modifying
     @Query("delete from AppUserRoleEntity r where r.id.userId = :userId")
-    void deleteAllByUserId(@Param("userId") Long userId);
+    void deleteAllByUserId(@Param("userId") String userId);
 }

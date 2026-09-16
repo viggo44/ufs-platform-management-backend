@@ -54,14 +54,14 @@ public class AppUserService {
     }
 
     @Transactional
-    public UserDto patchUser(Long id, UserPatchDto request) {
+    public UserDto patchUser(String id, UserPatchDto request) {
         AppUserEntity entity = getOrThrow(id);
         UserMapper.applyPatch(entity, request);
         return UserMapper.toDto(appUserRepository.save(entity));
     }
 
     public UfsPageListRs<UserDto> getUsers(UfsPageRequest pageRequest, String sort,
-                                            String lastName, String firstName, Long tabNum) {
+                                            String lastName, String firstName, String tabNum) {
         Sort resolvedSort = SortResolver.resolve(sort, AppUserSpecifications.SORT_WHITELIST, "id");
         Pageable pageable = CommonMapper.map(pageRequest, resolvedSort);
         Specification<AppUserEntity> spec = Specifications.allOf(
@@ -73,7 +73,7 @@ public class AppUserService {
                 pageRequest, result.getTotalPages(), result.getTotalElements());
     }
 
-    public List<GroupDto> getUserGroups(Long id) {
+    public List<GroupDto> getUserGroups(String id) {
         requireExists(id);
         return userGroupRepository.findAllByMemberUserId(id).stream()
                 .map(GroupMapper::toDto)
@@ -81,7 +81,7 @@ public class AppUserService {
     }
 
     /** Один native-запрос, см. {@link FlagResolutionRepository#resolveForUser}. */
-    public List<UserFlagDto> getUserFlags(Long id, boolean customOnly) {
+    public List<UserFlagDto> getUserFlags(String id, boolean customOnly) {
         requireExists(id);
         return flagResolutionRepository.resolveForUser(id, customOnly).stream()
                 .map(this::toUserFlagDto)
@@ -89,7 +89,7 @@ public class AppUserService {
     }
 
     @Transactional
-    public boolean deleteUser(Long id) {
+    public boolean deleteUser(String id) {
         if (!appUserRepository.existsById(id)) {
             return false;
         }
@@ -108,11 +108,11 @@ public class AppUserService {
                 row.getValue());
     }
 
-    private AppUserEntity getOrThrow(Long id) {
+    private AppUserEntity getOrThrow(String id) {
         return appUserRepository.findById(id).orElseThrow(() -> new NotFoundException("User " + id + " not found"));
     }
 
-    private void requireExists(Long id) {
+    private void requireExists(String id) {
         if (!appUserRepository.existsById(id)) {
             throw new NotFoundException("User " + id + " not found");
         }

@@ -28,7 +28,6 @@ public class FlagGroupValueEntity {
     @Column(nullable = false)
     private boolean value;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
     public FlagGroupValueEntity(Long flagId, Long groupId, boolean value) {

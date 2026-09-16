@@ -31,16 +31,15 @@ public class FlagEntity {
     @Column
     private String description;
 
-    @Column(name = "default_value", nullable = false)
+    @Column(nullable = false)
     private boolean defaultValue;
 
-    @Column(name = "with_customization", nullable = false)
+    @Column(nullable = false)
     private boolean withCustomization;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @PrePersist

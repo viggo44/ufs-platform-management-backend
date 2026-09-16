@@ -59,7 +59,7 @@ public class GroupController {
                                                  @QueryParam("sort") String sort,
                                                  @QueryParam("lastName") String lastName,
                                                  @QueryParam("firstName") String firstName,
-                                                 @QueryParam("tabNum") Long tabNum) {
+                                                 @QueryParam("tabNum") String tabNum) {
         UfsPageRequest pageRequest = new UfsPageRequest(
                 RequireParam.notNull(page, "page"), RequireParam.notNull(limit, "limit"));
         return groupService.getGroupUsers(RequireParam.notNull(id, "id"), pageRequest, sort, lastName, firstName, tabNum);
@@ -67,13 +67,13 @@ public class GroupController {
 
     @POST
     @Path("/users")
-    public boolean addGroupUsers(@QueryParam("id") Long id, List<Long> userIds) {
+    public boolean addGroupUsers(@QueryParam("id") Long id, List<String> userIds) {
         return groupService.addGroupUsers(RequireParam.notNull(id, "id"), userIds);
     }
 
     @POST
     @Path("/users/remove")
-    public boolean removeGroupUsers(@QueryParam("id") Long id, List<Long> userIds) {
+    public boolean removeGroupUsers(@QueryParam("id") Long id, List<String> userIds) {
         return groupService.removeGroupUsers(RequireParam.notNull(id, "id"), userIds);
     }
 

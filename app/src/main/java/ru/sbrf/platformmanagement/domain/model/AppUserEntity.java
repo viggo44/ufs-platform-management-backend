@@ -27,44 +27,34 @@ import java.time.Instant;
 public class AppUserEntity {
 
     @Id
-    @Column(name = "tab_num")
-    private Long tabNum;
+    private String tabNum;
 
-    @Column(name = "last_name", nullable = false)
+    @Column(nullable = false)
     private String lastName;
 
-    @Column(name = "first_name", nullable = false)
+    @Column(nullable = false)
     private String firstName;
 
-    @Column(name = "middle_name")
     private String middleName;
 
     /** Реальный SUDIR-идентификатор ССД. Заполняется только логином, до первого входа — null. */
-    @Column(name = "user_id")
     private String userId;
 
-    @Column(name = "username")
     private String username;
 
-    @Column(name = "full_name")
     private String fullName;
 
-    @Column(name = "department_number")
     private String departmentNumber;
 
-    @Column(name = "issuer")
     private String issuer;
 
-    @Column(name = "fingerprint")
     private String fingerprint;
 
-    @Column(name = "last_synced_at")
     private Instant lastSyncedAt;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @PrePersist

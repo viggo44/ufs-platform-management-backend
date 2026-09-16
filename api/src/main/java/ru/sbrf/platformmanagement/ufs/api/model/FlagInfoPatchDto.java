@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FlagInfoPatchDto {
-    private List<ValuedFlagDto<Long>> userIds;
+    private List<ValuedFlagDto<String>> userIds;
     private List<ValuedFlagDto<Long>> groupIds;
 }

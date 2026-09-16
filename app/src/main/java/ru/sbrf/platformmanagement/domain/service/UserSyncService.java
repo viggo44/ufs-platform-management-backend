@@ -29,10 +29,10 @@ public class UserSyncService {
         if (!properties.enabled()) {
             return;
         }
-        Long tabNum = snapshot.employeeNumberParsed();
+        String tabNum = snapshot.tabNum();
         if (tabNum == null) {
-            // app_user.tab_num — не null PK; без распарсенного табельного номера писать некуда.
-            log.warn("Skipping login-sync for SUDIR user [{}]: employeeNumber [{}] is not a valid tab_num",
+            // app_user.tab_num — не null PK; без табельного номера писать некуда.
+            log.warn("Skipping login-sync for SUDIR user [{}]: employeeNumber [{}] is blank",
                     snapshot.userId(), snapshot.employeeNumberRaw());
             return;
         }

@@ -31,7 +31,7 @@
 
     <changeSet id="0001-02-create-app-user" author="platform-management">
         <createTable tableName="app_user">
-            <column name="tab_num" type="BIGINT">
+            <column name="tab_num" type="VARCHAR(32)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="last_name" type="VARCHAR(255)">
@@ -86,7 +86,7 @@
 
     <changeSet id="0001-04-create-user-group-member" author="platform-management">
         <createTable tableName="user_group_member">
-            <column name="user_id" type="BIGINT">
+            <column name="user_id" type="VARCHAR(32)">
                 <constraints nullable="false"/>
             </column>
             <column name="group_id" type="BIGINT">
@@ -114,7 +114,7 @@
             <column name="flag_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="user_id" type="BIGINT">
+            <column name="user_id" type="VARCHAR(32)">
                 <constraints nullable="false"/>
             </column>
             <column name="value" type="BOOLEAN">
@@ -178,7 +178,7 @@
 
     <changeSet id="0001-08-create-usersync-links" author="platform-management">
         <createTable tableName="app_user_role">
-            <column name="user_id" type="BIGINT">
+            <column name="user_id" type="VARCHAR(32)">
                 <constraints nullable="false"/>
             </column>
             <column name="role_code" type="VARCHAR(128)">
@@ -195,7 +195,7 @@
                                   constraintName="fk_aur_role"/>
 
         <createTable tableName="app_user_permission">
-            <column name="user_id" type="BIGINT">
+            <column name="user_id" type="VARCHAR(32)">
                 <constraints nullable="false"/>
             </column>
             <column name="permission_code" type="VARCHAR(255)">

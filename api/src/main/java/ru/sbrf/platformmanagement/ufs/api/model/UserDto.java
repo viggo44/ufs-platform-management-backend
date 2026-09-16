@@ -16,8 +16,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDto {
-    private Long id;
-    private Long tabNum;
+    private String id;
+    private String tabNum;
     private String lastName;
     private String firstName;
     private String middleName;

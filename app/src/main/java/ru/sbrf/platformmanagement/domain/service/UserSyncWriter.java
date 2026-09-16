@@ -42,7 +42,7 @@ public class UserSyncWriter {
 
     @Transactional
     public void upsert(UserSnapshot snapshot) {
-        Long tabNum = snapshot.employeeNumberParsed();
+        String tabNum = snapshot.tabNum();
         upsertAppUser(tabNum, snapshot);
         syncRoles(tabNum, snapshot.roleCodes());
         syncPermissions(tabNum, snapshot.permissionCodes());
@@ -53,7 +53,7 @@ public class UserSyncWriter {
      * фамилия берутся из ССД. На обновление ССД считается источником истины и перезаписывает
      * ФИО, даже если их правили вручную через {@code patchUser}.
      */
-    private void upsertAppUser(Long tabNum, UserSnapshot s) {
+    private void upsertAppUser(String tabNum, UserSnapshot s) {
         AppUserEntity entity = appUserRepository.findById(tabNum).orElseGet(AppUserEntity::new);
         entity.setTabNum(tabNum);
         entity.setLastName(s.lastName());
@@ -69,7 +69,7 @@ public class UserSyncWriter {
         appUserRepository.save(entity);
     }
 
-    private void syncRoles(Long tabNum, List<String> codes) {
+    private void syncRoles(String tabNum, List<String> codes) {
         if (codes.isEmpty()) {
             appUserRoleRepository.deleteAllByUserId(tabNum);
             return;
@@ -90,7 +90,7 @@ public class UserSyncWriter {
                 .toList());
     }
 
-    private void syncPermissions(Long tabNum, List<String> codes) {
+    private void syncPermissions(String tabNum, List<String> codes) {
         if (codes.isEmpty()) {
             appUserPermissionRepository.deleteAllByUserId(tabNum);
             return;
