@@ -1,4 +1,4 @@
-package ru.sbrf.platformmanagement.ufs.api.model;
+package ru.sbrf.platformmanagement.ufs.api.model.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

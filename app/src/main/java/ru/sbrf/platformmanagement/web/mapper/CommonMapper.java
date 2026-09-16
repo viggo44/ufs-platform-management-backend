@@ -3,7 +3,7 @@ package ru.sbrf.platformmanagement.web.mapper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import ru.sbrf.platformmanagement.ufs.api.model.UfsPageRequest;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UfsPageRequest;
 
 /**
  * Дано было {@code map(UfsPageRequest): ru.sbrf.phoenix.signal.api.model.PageRequest} —

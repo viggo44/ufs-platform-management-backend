@@ -1,4 +1,4 @@
-package ru.sbrf.platformmanagement.ufs.api.model;
+package ru.sbrf.platformmanagement.ufs.api.model.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

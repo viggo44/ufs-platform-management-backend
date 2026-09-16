@@ -1,9 +1,9 @@
 package ru.sbrf.platformmanagement.web.mapper;
 
 import ru.sbrf.platformmanagement.domain.model.UserEntity;
-import ru.sbrf.platformmanagement.ufs.api.model.UserCreateDto;
-import ru.sbrf.platformmanagement.ufs.api.model.UserDto;
-import ru.sbrf.platformmanagement.ufs.api.model.UserPatchDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UserCreateDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UserDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UserPatchDto;
 
 public final class UserMapper {
 

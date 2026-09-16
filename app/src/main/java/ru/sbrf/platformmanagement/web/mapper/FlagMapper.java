@@ -1,9 +1,9 @@
 package ru.sbrf.platformmanagement.web.mapper;
 
 import ru.sbrf.platformmanagement.domain.model.FlagEntity;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagCreateDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagPatchDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagCreateDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagPatchDto;
 
 public final class FlagMapper {
 

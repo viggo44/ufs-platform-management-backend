@@ -1,9 +1,9 @@
 package ru.sbrf.platformmanagement.web.mapper;
 
 import ru.sbrf.platformmanagement.domain.model.UserGroupEntity;
-import ru.sbrf.platformmanagement.ufs.api.model.GroupCreateDto;
-import ru.sbrf.platformmanagement.ufs.api.model.GroupDto;
-import ru.sbrf.platformmanagement.ufs.api.model.GroupPatchDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.GroupCreateDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.GroupDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.GroupPatchDto;
 
 public final class GroupMapper {
 

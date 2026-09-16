@@ -6,21 +6,24 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.sbrf.platformmanagement.domain.service.FlagService;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagCreateDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagInfoDeleteDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagInfoDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagInfoPatchDto;
-import ru.sbrf.platformmanagement.ufs.api.model.FlagPatchDto;
-import ru.sbrf.platformmanagement.ufs.api.model.UfsPageListRs;
-import ru.sbrf.platformmanagement.ufs.api.model.UfsPageRequest;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagCreateDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagInfoDeleteDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagInfoDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagInfoPatchDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.FlagPatchDto;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UfsPageListRs;
+import ru.sbrf.platformmanagement.ufs.api.model.model.UfsPageRequest;
 import ru.sbrf.platformmanagement.web.mapper.RequireParam;
+import ru.sbrf.ufs.platform.core.jaxrs.response.RpcHandler;
+import ru.sbrf.ufs.platform.core.jaxrs.response.model.BaseResponse;
 
 @Path("/flags")
 @Produces(MediaType.APPLICATION_JSON)
@@ -31,45 +34,49 @@ public class FlagController {
     private final FlagService flagService;
 
     @POST
-    public FlagDto createFlag(@Valid FlagCreateDto request) {
-        return flagService.createFlag(request);
+    public BaseResponse<FlagDto> createFlag(@Valid FlagCreateDto request) {
+        return RpcHandler.get(() -> flagService.createFlag(request));
     }
 
     @PATCH
-    public FlagDto patchFlag(@QueryParam("id") Long id, @Valid FlagPatchDto request) {
-        return flagService.patchFlag(RequireParam.notNull(id, "id"), request);
+    @Path("/{id}")
+    public BaseResponse<FlagDto> patchFlag(@PathParam("id") Long id, @Valid FlagPatchDto request) {
+        return RpcHandler.get(() -> flagService.patchFlag(id, request));
     }
 
     @GET
-    public UfsPageListRs<FlagDto> getFlags(@QueryParam("page") Integer page,
-                                            @QueryParam("limit") Integer limit,
-                                            @QueryParam("sort") String sort,
-                                            @QueryParam("name") String name) {
-        UfsPageRequest pageRequest = new UfsPageRequest(
-                RequireParam.notNull(page, "page"), RequireParam.notNull(limit, "limit"));
-        return flagService.getFlags(pageRequest, sort, name);
+    public BaseResponse<UfsPageListRs<FlagDto>> getFlags(@QueryParam("page") Integer page,
+                                                           @QueryParam("limit") Integer limit,
+                                                           @QueryParam("sort") String sort,
+                                                           @QueryParam("name") String name) {
+        return RpcHandler.get(() -> {
+            UfsPageRequest pageRequest = new UfsPageRequest(
+                    RequireParam.notNull(page, "page"), RequireParam.notNull(limit, "limit"));
+            return flagService.getFlags(pageRequest, sort, name);
+        });
     }
 
     @GET
     @Path("/info")
-    public FlagInfoDto getFlagInfo(@QueryParam("id") Long id) {
-        return flagService.getFlagInfo(RequireParam.notNull(id, "id"));
+    public BaseResponse<FlagInfoDto> getFlagInfo(@QueryParam("id") Long id) {
+        return RpcHandler.get(() -> flagService.getFlagInfo(RequireParam.notNull(id, "id")));
     }
 
     @PATCH
-    @Path("/info")
-    public FlagInfoDto patchFlagInfo(@QueryParam("id") Long id, FlagInfoPatchDto request) {
-        return flagService.patchFlagInfo(RequireParam.notNull(id, "id"), request);
+    @Path("/{id}/info")
+    public BaseResponse<FlagInfoDto> patchFlagInfo(@PathParam("id") Long id, FlagInfoPatchDto request) {
+        return RpcHandler.get(() -> flagService.patchFlagInfo(id, request));
     }
 
     @DELETE
-    @Path("/info")
-    public boolean deleteFlagInfo(@QueryParam("id") Long id, FlagInfoDeleteDto request) {
-        return flagService.deleteFlagInfo(RequireParam.notNull(id, "id"), request);
+    @Path("/{id}/info")
+    public BaseResponse<Boolean> deleteFlagInfo(@PathParam("id") Long id, FlagInfoDeleteDto request) {
+        return RpcHandler.get(() -> flagService.deleteFlagInfo(id, request));
     }
 
     @DELETE
-    public boolean deleteFlag(@QueryParam("id") Long id) {
-        return flagService.deleteFlag(RequireParam.notNull(id, "id"));
+    @Path("/{id}")
+    public BaseResponse<Boolean> deleteFlag(@PathParam("id") Long id) {
+        return RpcHandler.get(() -> flagService.deleteFlag(id));
     }
 }

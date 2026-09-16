@@ -1,4 +1,4 @@
-package ru.sbrf.platformmanagement.ufs.api.model;
+package ru.sbrf.platformmanagement.ufs.api.model.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -10,8 +10,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GroupCreateDto {
+public class FlagCreateDto {
     @NotBlank(message = "Параметр name не должен быть пустым")
     private String name;
     private String desc;
+    private Boolean defaultValue;
+    private Boolean withCustomization;
 }

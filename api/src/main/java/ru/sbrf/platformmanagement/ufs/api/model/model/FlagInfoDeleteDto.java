@@ -1,4 +1,4 @@
-package ru.sbrf.platformmanagement.ufs.api.model;
+package ru.sbrf.platformmanagement.ufs.api.model.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FlagInfoDto {
-    private List<ValuedFlagDto<UserDto>> users;
-    private List<ValuedFlagDto<GroupDto>> groups;
+public class FlagInfoDeleteDto {
+    private List<String> userIds;
+    private List<Long> groupIds;
 }
